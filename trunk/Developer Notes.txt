@@ -1,0 +1,11 @@
+EP - Just a short list of additional undocumented items.
+
+Double-click the tray icon to connect, or if connected, to launch the 'Load Script' dialog.
+
+Stop script is no longer an option from the tray icon unless scripts are active.
+
+The CapEdit.exe utility appears to have significant memory leaks, so use it sparingly at this time.
+
+TWXC.exe doesn't seem to support drag & drop compiling, so it should be used exclusively from a command line.
+
+If the 'Load Script' dialog box is open when a script exits, the script will not fully exit until TWX is closed.
