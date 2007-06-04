@@ -9,3 +9,5 @@ The CapEdit.exe utility appears to have significant memory leaks, so use it spar
 TWXC.exe doesn't seem to support drag & drop compiling, so it should be used exclusively from a command line.
 
 If the 'Load Script' dialog box is open when a script exits, the script will not fully exit until TWX is closed.
+
+Testing the Subversion / Tortoise Upload / commit.
