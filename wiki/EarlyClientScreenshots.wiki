@@ -1,13 +1,13 @@
-#summary One-sentence summary of this page.
+#summary Early screenshots of twxclient
 
-= Introduction =
+= Basic =
 
-Add your content here.
+http://makoa.twdata.org/twxclient/tw-screen.png
 
+= Top Menu =
 
-= Details =
+http://makoa.twdata.org/twxclient/tw-menu.png
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+= Connect dialog
+
+http://makoa.twdata.org/twxclient/tw-connect.png
