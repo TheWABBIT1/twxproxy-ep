@@ -23,6 +23,15 @@ Esc[8mlogin={"name":"John Doe"}Esc[28m
 }}}
 Which creates a message object in a hash map format with a single entry, "name", set to "John Doe".
 
+== Telnet negotation ==
+
+Not all terminals support the conceal commands, so we need a way for the server to know if it should use them to embed the structured data.  The [http://www.iana.org/assignments/telnet-options telnet options negotiation] is a proven way for the client and server to determine if certain features are supported, so HIPS negotiation will use the unassigned option code '76'.
+
+The proper negotiation process will go:
+ # Server sends: IAC WILL HIPS
+ # Client responds: IAC [DO|DONT] HIPS
+
+If the server gets no response, it is assumed HIPS is not supported.
 = Implementations =
 
  * TWXProxy could optionally encode structured information into the text stream as it parses it internally
