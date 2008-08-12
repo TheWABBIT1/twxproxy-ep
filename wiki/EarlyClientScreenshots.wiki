@@ -4,10 +4,10 @@
 
 http://makoa.twdata.org/twxclient/tw-screen.png
 
-= Top Menu =
+= Top menu =
 
 http://makoa.twdata.org/twxclient/tw-menu.png
 
-= Connect dialog
+= Connect dialog =
 
 http://makoa.twdata.org/twxclient/tw-connect.png
