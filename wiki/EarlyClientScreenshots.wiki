@@ -12,6 +12,20 @@ http://makoa.twdata.org/twxclient/tw-menu.png
 
 http://makoa.twdata.org/twxclient/tw-connect.png
 
+= Nimrod config =
+{{{
+nimrodlf.p1=#8F0000
+nimrodlf.p2=#990000
+nimrodlf.p3=#A30000
+nimrodlf.s1=#000000
+nimrodlf.s2=#000000
+nimrodlf.s3=#000000
+nimrodlf.w=#0000CC
+nimrodlf.b=#00CC00
+nimrodlf.menuOpacity=195
+nimrodlf.frameOpacity=180
+}}}
+
 = References =
  * [http://personales.ya.com/nimrod/index-en.html Nimrod look and feel]
  * [http://javassh.org Java Telnet Application]
