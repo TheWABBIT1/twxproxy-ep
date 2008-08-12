@@ -1,0 +1,29 @@
+#summary Hidden-In-Plain-Sight Protocol for storing structured data in Telnet markup
+
+= Introduction =
+
+In order to retrieve meaningful data from a telnet application in an automated way, you need to parse its textual output made for humans.  Unfortunately, this approach, known as screen scraping, is highly brittle and time consuming for the client.  The "Hidden-in-Plain-Sight" or HIPS protocol seeks to define a way for a telnet application to "hide" structured data within its human-readable textual output. 
+
+= Details =
+
+HIPS works by using the [http://en.wikipedia.org/wiki/ANSI_color ASCII escape codes] 8 and 28, which turn on and off text concealing, respectively.  Within these boundries, a specific text-based format for message encoding is used to store the structured data.  The message format contains a message name and structured body, using the [http://json.org JSON] format for brevity.
+
+The HIPS format is as follows:
+{{{
+Esc[8mMESSAGE_NAME=JSON_BODYEsc[28m
+}}}
+Where:
+ * "Esc" is the ASCII escape code
+ * MESSAGE_NAME can be any alphanumeric character and any of the following special characters: '-','_'
+ * JSON_BODY is any valid JSON data structure with optional substructures
+
+For example, say you wanted to encode a login message.  This is what it would look like:
+{{{
+Esc[8mlogin={"name":"John Doe"}Esc[28m
+}}}
+Which creates a message object in a hash map format with a single entry, "name", set to "John Doe".
+
+= Implementations =
+
+ * TWXProxy could optionally encode structured information into the text stream as it parses it internally
+ * TWGS (wishful thinking)
