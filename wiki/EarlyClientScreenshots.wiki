@@ -11,3 +11,7 @@ http://makoa.twdata.org/twxclient/tw-menu.png
 = Connect dialog =
 
 http://makoa.twdata.org/twxclient/tw-connect.png
+
+= References =
+ * [http://personales.ya.com/nimrod/index-en.html Nimrod look and feel]
+ * [http://javassh.org Java Telnet Application]
