@@ -26,9 +26,6 @@ program TWXProxy;
 {%File 'changes.txt'}
 
 uses
-{$IFNDEF RELEASE}
-  MemCheck,
-{$ENDIF}
   Forms,
   Windows,
   SysUtils,
@@ -121,6 +118,7 @@ var
   Switch: string;
   ModuleType: TModuleType;
 begin
+  ReportMemoryLeaksOnShutdown := DebugHook <> 0;  // EP - Enables new mem-manager to report leaks if Debug=TRUE
   Randomize;
   ProgramDir := GetCurrentDir;
 
@@ -193,9 +191,9 @@ begin
 end;
 
 begin
-{$IFNDEF RELEASE}
-  MemChk;
-{$ENDIF}
+//{$IFNDEF RELEASE}
+//  MemChk;
+//{$ENDIF}
 
   Application.Initialize;
   Application.Title := 'TWX Proxy';

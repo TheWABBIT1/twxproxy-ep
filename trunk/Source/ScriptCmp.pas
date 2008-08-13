@@ -894,6 +894,7 @@ procedure TScriptCmp.RecurseCmd(const CmdLine : array of string; Line : Integer;
 var
   ParamLine : TStringList;
   I         : Integer;
+  S         : String;
 begin
   // convert the CmdLine into a string list and throw it all back through compiler
   ParamLine := TStringList.Create;
@@ -901,6 +902,12 @@ begin
   try
     for I := 0 to Length(CmdLine) - 1 do
       ParamLine.Append(CmdLine[I]);
+
+    { Troubleshooting
+    for I := 0 to ParamLine.Count - 1 do
+      S := S + ParamLine.Strings[I] + endl;
+    S := S + endl + endl;
+    TWXServer.Broadcast(S);}
 
     CompileParamLine(ParamLine, Line, ScriptID);
   finally
@@ -1517,6 +1524,13 @@ begin
             if (LineText[I] = '#') and (ParamStr = '') and (ParamLine.Count = 0) then
               Break; // its a comment
 
+            if (LineText[I] = '/') and (Last = '/') then
+            begin
+              // It's an in-line comment, like this one (//)
+              ParamStr := Copy(ParamStr, 1, Length(ParamStr) - 1);
+              Break;
+            end;
+
             if not (InQuote) and (IsOperator(LineText[I])) then
             begin
               if (Linked) then
@@ -1819,6 +1833,7 @@ begin
       Val := AllocMem(Len + 1);
       BlockRead(F, Val^, Len);
       SetString(ValStr, Val, Len);
+      //TWXServer.Broadcast('TCmdParam<' + ApplyEncryption(ValStr, 113) + '>' + endl);
       FreeMem(Val);
 
       Param := TCmdParam.Create;
@@ -1832,6 +1847,7 @@ begin
       Val := AllocMem(Len + 1);
       BlockRead(F, Val^, Len);
       SetString(ValStr, Val, Len);
+      //TWXServer.Broadcast('TVarParam1<' + ApplyEncryption(ValStr, 113) + '>' + endl);
       FreeMem(Val);
 
       Param := TVarParam.Create;
@@ -1841,6 +1857,7 @@ begin
       Val := AllocMem(Len + 1);
       BlockRead(F, Val^, Len);
       SetString(ValStr, Val, Len);
+      //TWXServer.Broadcast('TVarParam2<' + ApplyEncryption(ValStr, 113) + '>' + endl);
       FreeMem(Val);
 
       TVarParam(Param).Name := ApplyEncryption(ValStr, 113);
@@ -1858,6 +1875,7 @@ begin
     Val := AllocMem(Len + 1);
     BlockRead(F, Val^, Len);
     SetString(ValStr, Val, Len);
+    //TWXServer.Broadcast('Include<' + ValStr + '>' + endl);
     FreeMem(Val);
     IncludeScriptList.Add(ValStr);
     BlockRead(F, Len, 4);
@@ -1871,6 +1889,7 @@ begin
     Val := AllocMem(Len + 1);
     BlockRead(F, Val^, Len);
     SetString(ValStr, Val, Len);
+    //TWXServer.Broadcast('Label<' + ValStr + '>' + endl);
     FreeMem(Val);
 
     Lab := TScriptLabel.Create;

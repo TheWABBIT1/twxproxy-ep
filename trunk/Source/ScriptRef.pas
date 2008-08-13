@@ -47,14 +47,21 @@ type
   // script command handling functions within the ScriptCmd unit.
   TCmdParam = class(TObject)
   private
-    FValue       : string;
-    FIsTemporary : Boolean;
+    FStrValue     : string;
+    FDecValue     : Extended;
+    FIsNumeric    : Boolean;
+    FIsTemporary  : Boolean;
 
   public
     constructor Create; virtual;
     destructor Destroy; override;
 
-    property Value : string read FValue write FValue;
+    procedure SetBool(B : Boolean);
+    procedure SetStrValue(S : string);
+    property Value : string read FStrValue write SetStrValue;
+    property StrValue : string read FStrValue write FStrValue;
+    property DecValue : Extended read FDecValue write FDecValue;
+    property IsNumeric : Boolean read FIsNumeric write FIsNumeric;
     property IsTemporary : Boolean read FIsTemporary write FIsTemporary;
   end;
 
@@ -138,7 +145,9 @@ begin
   inherited;
 
   // set defaults
-  Value := '0';
+  FStrValue := '0';
+  FDecValue := 0;
+  FIsNumeric := FALSE; // Assumed False until it's tested
   FIsTemporary := FALSE;
 end;
 
@@ -149,6 +158,27 @@ begin
   inherited;
 end;
 
+procedure TCmdParam.SetBool(B: Boolean);
+begin
+  if (B) then
+  begin
+    FStrValue := '1';
+    FDecValue := 1;
+    FIsNumeric := true;
+  end
+  else
+  begin
+    FStrValue := '0';
+    FDecValue := 0;
+    FIsNumeric := true;
+  end;
+end;
+
+procedure TCmdParam.SetStrValue(S: string);
+begin
+  FStrValue := S;
+  FIsNumeric := false;
+end;
 
 // ***************************************************************
 // TScriptCmd implementation

@@ -57,9 +57,56 @@ const
   SCSectorParameterError = 'Sector parameter name cannot be longer than 10 characters';
   SCSectorParameterValueError = 'Sector parameter value cannot be longer than 40 characters';
 
-function FormatFloatToStr(Value : Extended; Precision : Integer) : string;
+//var
+  // EP - These vars are used to speed up TextToFloat & FloatToText conversions
+  //LastPrecision : Extended = 0;
+  //LastMultiplier : Extended = 1;
+  //CharBuffer : array[0..64] of Char;
+  //PCharBuffer : PChar = @CharBuffer;
+var
+  // EP - These are for improving the speed of repetitive Read commands
+  LastReadFilename : String;
+  LastReadModTime : Integer;
+  LastReadStrings : TStringList;
+
+function RaiseToPower(const Value : Extended; const Power : Integer) : Extended;
+var
+  I : Integer;
 begin
-  Result := FloatToStrF(Value, ffFixed, 18, Precision);
+  Result := Value;
+  for I := 0 to Power - 1 do
+    Result := Result * Value;
+end;
+
+function TruncFloat(const F : Extended; Digits : Integer) : Extended;
+const
+  // EP - These values persist, to improve efficiency
+  LastPrecision : Extended = 0;
+  LastMultiplier : Extended = 1;
+begin
+  if (Digits > 18) then
+    Digits := 18;
+
+  if (Digits <> LastPrecision) then
+  begin
+    LastPrecision := Digits;
+    LastMultiplier := RaiseToPower(10, Digits);
+  end;
+  Result := Int(F * LastMultiplier) / LastMultiplier;
+end;
+
+procedure UpdateParam(Param : TCmdParam; const Value : Extended; const Digits : Integer);
+const
+  // EP - CharBuffer persists, to improve efficiency
+  CharBuffer : array[0..64] of Char = #0;
+var
+  I : Integer;
+begin
+  Param.DecValue := TruncFloat(Value, Digits);
+  I := FloatToText(@CharBuffer, Value, fvExtended, ffFixed, 18, Digits);
+  CharBuffer[I] := #0; // EP - Since FloatToText doesn't end the PChar w/ #0
+  Param.StrValue := PChar(@CharBuffer);
+  Param.IsNumeric := true;
 end;
 
 procedure ConvertToNumber(const S : string; var N : Integer);
@@ -71,13 +118,43 @@ begin
   end;
 end;
 
-procedure ConvertToFloat(const S : string; const Precision : Integer; var N : Extended);
+function ConvertToFloat(Param : TCmdParam) : Extended;
+var
+  F : Extended;
 begin
-  try
-    // ugly and slow code ... required for float rounding to specified precision
-    N := StrToFloat(FormatFloatToStr(StrToFloat(S), Precision));
-  except
-    raise EScriptError.Create('''' + S + ''' is not a decimal number');
+// This command no longer truncs a float at the setPrecision decimal place
+//   The value should have been rounded if the addition digits were unwanted
+  if Param.IsNumeric then
+    Result := Param.DecValue
+  else
+  begin
+    // We eliminate lots of TextToFloat calls by shortcutting the boolean values
+    if (Param.Value = '0') then
+    begin
+      Result := 0;
+      Param.DecValue := 0;
+      Param.IsNumeric := true;
+    end
+    else if (Param.Value = '1') then
+    begin
+      Result := 1;
+      Param.DecValue := 1;
+      Param.IsNumeric := true;
+    end
+    else
+    begin
+      if TextToFloat(PChar(Param.Value), F, fvExtended) then
+      begin
+        Result := F;
+        Param.DecValue := F;
+        Param.IsNumeric := true;
+      end
+      else
+      begin
+        Param.IsNumeric := false;
+        raise EScriptError.Create('''' + Param.Value + ''' is not a decimal number');
+      end;
+    end;
   end;
 end;
 
@@ -117,12 +194,9 @@ begin
   // CMD: add var <value>
   // add a value to a variable
 
-  ConvertToFloat(Params[0].Value, TScript(Script).DecimalPrecision, F1);
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, F2);
-  if (TScript(Script).DecimalPrecision = 0) then
-    Params[0].Value := IntToStr(Trunc(F1 + F2))
-  else
-    Params[0].Value := FormatFloatToStr(F1 + F2, TScript(Script).DecimalPrecision);
+  F1 := ConvertToFloat(Params[0]);
+  F2 := ConvertToFloat(Params[1]);
+  UpdateParam(Params[0], F1 + F2, TScript(Script).DecimalPrecision);
 
   Result := caNone;
 end;
@@ -272,16 +346,11 @@ begin
   // CMD: divide var <value>
   // divide variable by a value
 
-  ConvertToFloat(Params[0].Value, TScript(Script).DecimalPrecision, F1);
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, F2);
-
+  F2 := ConvertToFloat(Params[1]);
   if (F2 = 0) then
     raise EScriptError.Create('Division by zero');
-
-  if (TScript(Script).DecimalPrecision = 0) then
-    Params[0].Value := IntToStr(Trunc(F1 / F2))
-  else
-    Params[0].Value := FormatFloatToStr(F1 / F2, TScript(Script).DecimalPrecision);
+  F1 := ConvertToFloat(Params[0]);
+  UpdateParam(Params[0], F1 / F2, TScript(Script).DecimalPrecision);
 
   Result := caNone;
 end;
@@ -820,8 +889,11 @@ begin
 end;
 
 function CmdGetTimer(Script : TObject; Params : array of TCmdParam) : TCmdAction;
+var
+  I : Integer;
 begin
   Params[0].Value := IntToStr(Utility.rdtsc);
+  Params[0].IsNumeric := FALSE; // EP - I could've done a float->str conversion, but we'll wait till we use it
   Result := caNone;
 end;
 
@@ -884,30 +956,17 @@ begin
   // CMD: isEqual var <value1> <value2>
   // var = 1 if <value1> = <value2> else var = 0
 
-  Result := caNone;
-
-  if (TScript(Script).DecimalPrecision > 0) then
-  begin
-    // attempt floating point comparison
-    if (TextToFloat(PChar(Params[1].Value), F1, fvExtended) and TextToFloat(PChar(Params[2].Value), F2, fvExtended)) then
-    begin
-      // need to round it too
-      ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, F1);
-      ConvertToFloat(Params[2].Value, TScript(Script).DecimalPrecision, F2);
-
-      if (F1 = F2) then
-        Params[0].Value := '1'
-      else
-        Params[0].Value := '0';
-
-      Exit;
-    end;
+  try
+    // Attempt to compare as floats
+    F1 := ConvertToFloat(Params[1]);
+    F2 := ConvertToFloat(Params[2]);
+    Params[0].SetBool(F1 = F2);
+  except on E: EScriptError do
+    // Float comparison failed, try string comparison
+    Params[0].SetBool(AnsiSameStr(Params[1].Value, Params[2].Value));
   end;
 
-  if (Params[1].Value = Params[2].Value) then
-    Params[0].Value := '1'
-  else
-    Params[0].Value := '0';
+  Result := caNone;
 end;
 
 function CmdIsGreater(Script : TObject; Params : array of TCmdParam) : TCmdAction;
@@ -918,13 +977,9 @@ begin
   // CMD: isGreater var <value1> <value2>
   // var = 1 if <value1> > <value2> else var = 0
 
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, V1);
-  ConvertToFloat(Params[2].Value, TScript(Script).DecimalPrecision, V2);
-
-  if (V1 > V2) then
-    Params[0].Value := '1'
-  else
-    Params[0].Value := '0';
+  V1 := ConvertToFloat(Params[1]);
+  V2 := ConvertToFloat(Params[2]);
+  Params[0].SetBool(V1 > V2);
 
   Result := caNone;
 end;
@@ -937,13 +992,9 @@ begin
   // CMD: isGreaterEqual var <value1> <value2>
   // var = 1 if <value1> >= <value2> else var = 0
 
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, V1);
-  ConvertToFloat(Params[2].Value, TScript(Script).DecimalPrecision, V2);
-
-  if (V1 >= V2) then
-    Params[0].Value := '1'
-  else
-    Params[0].Value := '0';
+  V1 := ConvertToFloat(Params[1]);
+  V2 := ConvertToFloat(Params[2]);
+  Params[0].SetBool(V1 >= V2);
 
   Result := caNone;
 end;
@@ -956,13 +1007,9 @@ begin
   // CMD: isLesser var <value1> <value2>
   // var = 1 if <value1> < <value2> else var = 0
 
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, V1);
-  ConvertToFloat(Params[2].Value, TScript(Script).DecimalPrecision, V2);
-
-  if (V1 < V2) then
-    Params[0].Value := '1'
-  else
-    Params[0].Value := '0';
+  V1 := ConvertToFloat(Params[1]);
+  V2 := ConvertToFloat(Params[2]);
+  Params[0].SetBool(V1 < V2);
 
   Result := caNone;
 end;
@@ -975,13 +1022,9 @@ begin
   // CMD: isLesserEqual var <value1> <value2>
   // var = 1 if <value1> <= <value2> else var = 0
 
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, V1);
-  ConvertToFloat(Params[2].Value, TScript(Script).DecimalPrecision, V2);
-
-  if (V1 <= V2) then
-    Params[0].Value := '1'
-  else
-    Params[0].Value := '0';
+  V1 := ConvertToFloat(Params[1]);
+  V2 := ConvertToFloat(Params[2]);
+  Params[0].SetBool(V1 <= V2);
 
   Result := caNone;
 end;
@@ -994,30 +1037,17 @@ begin
   // CMD: isNotEqual var <value1> <value2>
   // var = 1 if <value1> <> <value2> else var = 0
 
-  Result := caNone;
-
-  if (TScript(Script).DecimalPrecision > 0) then
-  begin
-    // attempt floating point comparison
-    if (TextToFloat(PChar(Params[1].Value), F1, fvExtended) and TextToFloat(PChar(Params[2].Value), F2, fvExtended)) then
-    begin
-      // need to round it too
-      ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, F1);
-      ConvertToFloat(Params[2].Value, TScript(Script).DecimalPrecision, F2);
-
-      if (F1 = F2) then
-        Params[0].Value := '0'
-      else
-        Params[0].Value := '1';
-
-      Exit;
-    end;
+  try
+    // Attempt to compare as floats
+    F1 := ConvertToFloat(Params[1]);
+    F2 := ConvertToFloat(Params[2]);
+    Params[0].SetBool(F1 = F2);
+  except on E: EScriptError do
+    // Float comparison failed, try string comparison
+    Params[0].SetBool(AnsiSameStr(Params[1].Value, Params[2].Value) = false);
   end;
 
-  if (Params[1].Value = Params[2].Value) then
-    Params[0].Value := '0'
-  else
-    Params[0].Value := '1';
+  Result := caNone;
 end;
 
 function CmdIsNumber(Script : TObject; Params : array of TCmdParam) : TCmdAction;
@@ -1179,13 +1209,9 @@ begin
   // CMD: multiply var <value>
   // multiply a variable by a value
 
-  ConvertToFloat(Params[0].Value, TScript(Script).DecimalPrecision, F1);
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, F2);
-
-  if (TScript(Script).DecimalPrecision = 0) then
-    Params[0].Value := IntToStr(Trunc(F1 * F2))
-  else
-    Params[0].Value := FormatFloatToStr(F1 * F2, TScript(Script).DecimalPrecision);
+  F1 := ConvertToFloat(Params[0]);
+  F2 := ConvertToFloat(Params[1]);
+  UpdateParam(Params[0], F1 * F2, TScript(Script).DecimalPrecision);
 
   Result := caNone;
 end;
@@ -1260,18 +1286,49 @@ end;
 
 function CmdRead(Script : TObject; Params : array of TCmdParam) : TCmdAction;
 var
-  InputFile : TextFile;
+//  InputFile : TextFile;
+//  I,
+//  E         : Integer;
+//  Value     : string;
   Line,
-  I,
-  E         : Integer;
-  Value     : string;
+  FileDate  : Integer;
+{
+  LastFileRead : String;
+  LastFileModified : TFileTime;
+  LastFileStrings : TStringArray;
+}
 begin
   // CMD: read <file> storageVar <line>
+  FileDate := FileAge(Params[0].Value);
+  if (FileDate > 0) then
+  begin
+    ConvertToNumber(Params[2].Value, Line);
 
-  ConvertToNumber(Params[2].Value, Line);
+    // If the file name or timestamp has changed, update the constants
+    if (Params[0].Value <> LastReadFilename) or (FileDate <> LastReadModTime) then
+    begin
+      LastReadFilename := Params[0].Value;
+      LastReadModTime := FileDate;
+      if not Assigned(LastReadStrings) then
+        LastReadStrings := TStringList.Create;  // Still need to destroy on exit
+      LastReadStrings.LoadFromFile(Params[0].Value);
+    end;
+
+    if (Line > LastReadStrings.Count) then
+      Params[1].Value := 'EOF'
+    else
+      Params[1].Value := LastReadStrings[Line - 1];
+
+  end
+  else
+    raise EScriptError.Create('File ''' + Params[0].Value + ''' not found');
+
+  Result := caNone;
+end;
+(*
 
   // Read line from file
-  {$I-}
+//  {$I-}
   Assign(InputFile, Params[0].Value);
   Reset(InputFile);
 
@@ -1307,6 +1364,7 @@ begin
 
   Result := caNone;
 end;
+*)
 
 function CmdReadToArray(Script : TObject; Params : array of TCmdParam) : TCmdAction;
 // CMD: readToArray <file> storageArray
@@ -1371,21 +1429,18 @@ end;
 
 function CmdRound(Script : TObject; Params : array of TCmdParam) : TCmdAction;
 var
-  Value     : Extended;
+  F : Extended;
   Precision : Integer;
 begin
   // CMD: round var <precision>
 
-  ConvertToFloat(Params[0].Value, TScript(Script).DecimalPrecision, Value);
-
   if (Length(Params) < 2) then
     Precision := 0
   else
-    ConvertToNumber(Params[1].Value, Precision);
-  if (TScript(Script).DecimalPrecision = 0) then
-    Params[0].Value := IntToStr(Trunc(Value))
-  else
-    Params[0].Value := FormatFloatToStr(Value, Precision);
+    Precision := Trunc(ConvertToFloat(Params[1]));
+  
+  F := ConvertToFloat(Params[0]);
+  UpdateParam(Params[0], F, Precision);
 
   Result := caNone;
 end;
@@ -1609,10 +1664,23 @@ begin
 end;
 
 function CmdSetVar(Script : TObject; Params : array of TCmdParam) : TCmdAction;
+var
+  F : Extended;
 begin
   // CMD: setVar var <value>
 
+  // EP - This is the best place for variables to be evaluated as numeric or not
   Params[0].Value := Params[1].Value;
+  try
+    F := ConvertToFloat(Params[1]);
+    Params[0].DecValue := Params[1].DecValue;
+    Params[0].IsNumeric := Params[1].IsNumeric;
+  except on E: EScriptError do
+    begin
+      Params[1].IsNumeric := FALSE; // EP - Might as well update both params
+      Params[0].IsNumeric := FALSE;
+    end;
+  end;
 
   Result := caNone;
 end;
@@ -1690,13 +1758,9 @@ begin
   // CMD: subtract var <value>
   // subtract a value from a variable
 
-  ConvertToFloat(Params[0].Value, TScript(Script).DecimalPrecision, F1);
-  ConvertToFloat(Params[1].Value, TScript(Script).DecimalPrecision, F2);
-
-  if (TScript(Script).DecimalPrecision = 0) then
-    Params[0].Value := IntToStr(Trunc(F1 - F2))
-  else
-    Params[0].Value := FormatFloatToStr(F1 - F2, TScript(Script).DecimalPrecision);
+  F1 := ConvertToFloat(Params[0]);
+  F2 := ConvertToFloat(Params[1]);
+  UpdateParam(Params[0], F1 - F2, TScript(Script).DecimalPrecision);
 
   Result := caNone;
 end;

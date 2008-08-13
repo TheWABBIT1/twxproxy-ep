@@ -29,9 +29,9 @@ uses
   SysUtils,
   Classes,
   ScktComp,
-  TnCnx,
+  //OverbyteICSTnCnx,
   ExtCtrls,
-  WSocket,
+  //OverbyteICSWSocket,
   Core;
 
 const
@@ -64,10 +64,10 @@ type
     function GetClientAddress(Index : Integer) : string;
     function ProcessTelnet(S : string; Socket : TCustomWinSocket) : string;
     function GetSocketIndex(S : TCustomWinSocket) : Integer;
-
-    { IModServer }
     function GetListenPort: Word;
     procedure SetListenPort(Value: Word);
+
+    { IModServer }
     function GetAcceptExternal: Boolean;
     procedure SetAcceptExternal(Value: Boolean);
     function GetBroadCastMsgs: Boolean;
@@ -105,17 +105,23 @@ type
   end;
 
   TModClient = class(TTWXModule, IModClient)
+  type
+    TFunc = (None, IAC, Op, Sub, Command, Done); // EP - Set here to persist between receives
   private
-    tcpClient       : TTnCnx;
+    tcpClient       : TClientSocket;
     tmrReconnect    : TTimer;
     FReconnect,
     FUserDisconnect,
     FConnecting     : Boolean;
+    FOptionSent      : array[0..255] of Boolean;
+
+  private
+    function ProcessTelnet(S : string; Socket : TCustomWinSocket) : string;
 
   protected
-    procedure tcpClientSessionConnected(Sender: TTnCnx; Error: Word);
-    procedure tcpClientSessionClosed(Sender: TTnCnx; Error: Word);
-    procedure tcpClientDataAvailable(Sender: TTnCnx; Buffer: Pointer; Len: Integer);
+    procedure tcpClientOnConnect(Sender: TObject; ScktComp: TCustomWinSocket);
+    procedure tcpClientOnDisconnect(Sender: TObject; ScktComp: TCustomWinSocket);
+    procedure tcpClientOnRead(Sender: TObject; ScktComp: TCustomWinSocket);
     procedure tmrReconnectTimer(Sender: TObject);
 
     function GetConnected : Boolean;
@@ -637,18 +643,14 @@ begin
   FConnecting := FALSE;
   FUserDisconnect := FALSE;
 
-  tcpClient := TTnCnx.Create(Self);
+  tcpClient := TClientSocket.Create(Self);
 
   with (tcpClient) do
   begin
-    Location := 'TWX';
-    TermType := 'VT100';
-    LocalEcho := FALSE;
-    Port := '23';
-
-    OnSessionConnected := tcpClientSessionConnected;
-    OnSessionClosed := tcpClientSessionClosed;
-    OnDataAvailable := tcpClientDataAvailable;
+    Port := 23;
+    OnConnect := tcpClientOnConnect;
+    OnDisconnect := tcpClientOnDisconnect;
+    OnRead := tcpClientOnRead;
   end;
 
   tmrReconnect := TTimer.Create(Self);
@@ -671,7 +673,7 @@ end;
 procedure TModClient.Send(Text : string);
 begin
   if (Connected) and (Text <> '') then
-    tcpClient.SendStr(Text);
+    tcpClient.Socket.SendText(Text);
 end;
 
 procedure TModClient.Connect(IsReconnect : Boolean = FALSE);
@@ -689,8 +691,7 @@ begin
     Exit;
   end;
 
-  // Activate client - connect to server
-  tcpClient.Port := IntToStr(TWXDatabase.DBHeader.Port);
+  tcpClient.Port := TWXDatabase.DBHeader.Port;
   tcpClient.Host := TWXDatabase.DBHeader.Address;
 
   // Broadcast operation
@@ -698,7 +699,7 @@ begin
 
   try
     FConnecting := TRUE;
-    tcpClient.Connect;
+    tcpClient.Open;
 
     // Update menu options
     TWXGUI.Connected := True;
@@ -735,13 +736,16 @@ begin
   tcpClient.Close;
 end;
 
-procedure TModClient.tcpClientSessionConnected(Sender : TTnCnx; Error : Word);
+procedure TModClient.tcpClientOnConnect(Sender: TObject; ScktComp: TCustomWinSocket);
 begin
   // We are now connected
 
   TWXExtractor.Reset;
   FUserDisconnect := FALSE;
   FConnecting := FALSE;
+
+  // Send Are You There
+  ScktComp.SendText(#255 + OP_DO + #246);
 
   // Broadcast event
   TWXServer.ClientMessage('Connection accepted');
@@ -753,7 +757,7 @@ begin
     TWXInterpreter.Load(FetchScript(TWXDatabase.DBHeader.LoginScript, FALSE), FALSE);
 end;
 
-procedure TModClient.tcpClientSessionClosed(Sender: TTnCnx; Error: Word);
+procedure TModClient.tcpClientOnDisconnect(Sender: TObject; ScktComp: TCustomWinSocket);
 begin
   // No longer connected
 
@@ -772,15 +776,154 @@ begin
   TWXInterpreter.ProgramEvent('Connection lost', '', FALSE);
 end;
 
-procedure TModClient.tcpClientDataAvailable(Sender: TTnCnx; Buffer: Pointer;
-  Len: Integer);
+function TModClient.ProcessTelnet(S : String; Socket : TCustomWinSocket) : String;
+var
+  //SktIndex,
+  I          : Integer;
+  Retn       : string;
+  TNOp       : Char;
+  Func       : TFunc;
+  SentThisOp : Boolean;
+
+  procedure TransmitOp(Func : Char; OpCode : Byte);
+  begin
+    if not (FOptionSent[OpCode]) then
+    begin
+      FOptionSent[OpCode] := TRUE;
+      Socket.SendText(#255 + Char(Func) + Char(OpCode));
+
+      if (OpCode = Byte(S[I])) then
+        SentThisOp := TRUE;
+    end;
+  end;
+
+begin
+  // process and remove telnet commands
+  Retn := '';
+  Func := None;
+  TNOp := #0;
+
+  for I := 1 to Length(S) do
+  begin
+    if (S[I] = #255) then
+    begin
+      if (Func = None) then
+        Func := IAC
+      else if (Func = IAC) then
+        Func := None // two datamarks = #255 sent to server
+      else if (Func = Op) or (Func = Command) then
+        Func := Done;
+    end
+    else
+    begin
+      if (Func = IAC) then
+      begin
+        if (S[I] = OP_SB) then
+          Func := Sub
+        else if (S[I] = OP_DO) or (S[I] = OP_DONT) or (S[I] = OP_WILL) or (S[I] = OP_WONT) then
+        begin
+          Func := Op;
+          TNOp := S[I];
+        end
+        else
+          Func := Done;
+      end
+      else if (Func = Op) then
+      begin
+        Func := Command;
+        SentThisOp := FALSE;
+
+        // negotiate operations
+        if (S[I] = #246) then
+        begin
+          // send telnet stuff - Suppress GA, Transmit Binary, Echo
+          TransmitOp(OP_WILL, 3);
+          TransmitOp(OP_WILL, 0);
+          TransmitOp(OP_WILL, 1);
+          Func := Done; // EP
+        end
+        else if (TNOp = OP_DO) then
+        begin
+          if (S[I] = #25) or (S[I] = #1) or (S[I] = #3) or (S[I] = #0) or (S[I] = #200) then
+          begin
+            TransmitOp(OP_WILL, Byte(S[I]));
+
+            //if (S[I] = #200) then
+              //FClientEchoMarks[SktIndex] := TRUE;
+          end
+          else
+            TransmitOp(OP_WONT, Byte(S[I]));
+          Func := Done; // EP
+        end
+        else if (TNOp = OP_WILL) then
+        begin
+          if (S[I] = #3) // suppress goahead
+            or (S[I] = #0) // transmit binary
+            or (S[I] = #1) // local echo
+            then
+            TransmitOp(OP_DO, Byte(S[I]))
+          else
+            TransmitOp(OP_DONT, Byte(S[I]));
+          Func := Done; // EP
+        end
+        else if (TNOp = OP_DONT) then
+        begin
+          if (S[I] = #200) then
+          begin
+            // don't TWX Echo Mark
+            //FClientEchoMarks[SktIndex] := FALSE;
+            TransmitOp(OP_WONT, 200);
+          end
+          else
+            TransmitOp(OP_WONT, Byte(S[I])); // EP
+          Func := Done; // EP
+        end
+        else if (TNOp = OP_WONT) then // EP - This was missing from the server function
+        begin
+          // Just ignore it - EP
+          Func := Done; // EP
+        end;
+
+        if (FOptionSent[Byte(S[I])]) and not (SentThisOp) then
+          FOptionSent[Byte(S[I])] := FALSE;
+      end // end (Function = Op)
+      else if (Func = Sub) then
+      begin
+        if (S[I] = #240) then
+          Func := Done; // EP
+      end
+      else if (Func = Command) then
+        Func := Done; // EP - Some unknown command?
+    end;
+
+    if (Func = Done) then
+      Func := None
+    else if (Func = None) then
+      Retn := Retn + S[I];
+  end;
+
+  Result := Retn;
+end;
+
+procedure TModClient.tcpClientOnRead(Sender: TObject; ScktComp: TCustomWinSocket);
 var
   InString,
+  NewString,
   XString  : string;
+  BufSize : integer;
+  Buffer : array[0..255] of char;
 begin
+  InString := '';
   // Read from client socket
-  SetString(InString, PChar(Buffer), Len);
-  XString := InString;
+  BufSize := ScktComp.ReceiveBuf(Buffer, 256);
+  while BufSize > 0 do begin
+    //InString := InString + Copy(Buffer, 1, BufSize);
+    SetString(NewString, Buffer, BufSize);
+    InString := InString + NewString;
+    BufSize := ScktComp.ReceiveBuf(Buffer, 256);
+  end;
+
+  XString := ProcessTelnet(InString, ScktComp);
 
   if (TWXMenu.CurrentMenu <> nil) then
     // menu prompt
@@ -803,7 +946,8 @@ end;
 
 function TModClient.GetConnected : Boolean;
 begin
-  Result := tcpClient.IsConnected;
+  //Result := tcpClient.IsConnected;
+  Result := tcpClient.Active;
 end;
 
 function TModClient.GetReconnect: Boolean;
