@@ -42,13 +42,13 @@ uses
   ExtCtrls,
   StdCtrls,
   ComCtrls,
-  TrayIcon,
+  //TrayIcon,
   ImgList,
   FileCtrl,
-  Encryptor,
+  //Encryptor,
   Bubble,
   Database,
-  TnCnx,
+  //OverbyteICSTnCnx,
   Core,
   Script,
   ActnList;
@@ -86,8 +86,8 @@ type
     N5: TMenuItem;
     miExportBubble: TMenuItem;
     miExportDeadend: TMenuItem;
-    trayIcon: TTrayIcon;
-    Encryptor: TEncryptor;
+    //trayIcon: TTrayIcon;
+    //Encryptor: TEncryptor;
     N6: TMenuItem;
     miExportTWX: TMenuItem;
     miImportTWX: TMenuItem;
@@ -105,7 +105,7 @@ type
     procedure miLoadClick(Sender: TObject);
 
     procedure miHistoryClick(Sender: TObject);
-    procedure trayIconDblClick(Sender: TObject);
+    //procedure trayIconDblClick(Sender: TObject);
     procedure tmrHideFormTimer(Sender: TObject);
     procedure miExportClick(Sender: TObject);
     procedure miImportClick(Sender: TObject);
@@ -170,7 +170,7 @@ end;
 procedure TfrmMain.SetDatabaseName(const Value : string);
 begin
   FDatabaseName := Value;
-  trayIcon.ToolTip := 'TWX Proxy: ' + Value;
+  //trayIcon.Hint := 'TWX Proxy: ' + Value;
 end;
 
 function TfrmMain.GetDatabaseName : string;
@@ -370,7 +370,7 @@ end;
 
 procedure TfrmMain.SetToolTip(ToolTip : string);
 begin
-  trayIcon.ToolTip := ToolTip;
+  //trayIcon.Hint := ToolTip;
 end;
 
 procedure TfrmMain.miImportClick(Sender: TObject);
@@ -685,7 +685,7 @@ end;
 
 
 
-procedure TfrmMain.trayIconDblClick(Sender: TObject);
+{procedure TfrmMain.trayIconDblClick(Sender: TObject);
 begin
   SetForegroundWindow(Application.Handle);
 
@@ -693,7 +693,7 @@ begin
     miLoadClick(Sender)
   else if (miConnect.Default) then
     miConnectClick(Sender);
-end;
+end;}
 
 procedure TfrmMain.tmrHideFormTimer(Sender: TObject);
 begin

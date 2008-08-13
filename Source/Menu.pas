@@ -2163,13 +2163,13 @@ begin
   if (FileExists(Name)) then
   begin
     TWXServer.ClientMessage(endl + endl + 'Deleting database: ' + ANSI_7 + Name + endl);
-    DeleteFile(Name);
+    SysUtils.DeleteFile(Name);
   end;
 
   Name := StripFileExtension(Name) + '.cfg';
 
   if (FileExists(Name)) then
-    DeleteFile(Name);
+    SysUtils.DeleteFile(Name);
 end;
 
 procedure TModMenu.miDatabaseSelect(ClientIndex : Byte);
