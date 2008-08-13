@@ -14,7 +14,7 @@ Esc[8mMESSAGE_NAME=JSON_BODYEsc[28m
 }}}
 Where:
  * "Esc" is the ASCII escape code
- * MESSAGE_NAME can be any alphanumeric character and any of the following special characters: '-','_'
+ * MESSAGE_NAME can be any alphanumeric character and any of the following special characters: '-','_', or '.'.  The message name can optionally be name spaced using the NAMESPACE.MESSAGE_NAME convention.
  * JSON_BODY is any valid JSON data structure with optional substructures
 
 For example, say you wanted to encode a login message.  This is what it would look like:
@@ -32,6 +32,49 @@ The proper negotiation process will go:
  # Client responds: IAC [DO|DONT] HIPS
 
 If the server gets no response, it is assumed HIPS is not supported.
+
+= Known Namespaces =
+These are namespaces that are known to use this protocol:
+== tw ==
+The 'tw' namespace is for common messages in the game TradeWars 2002.  The following are messages in this namespace and examples of their use.
+
+=== tw.sectorUpdate ===
+{{{
+tw.sectorUpdate={
+    "warp"       : [10, 203, 442],
+    "port"       : {
+        "name"           : "Some port",
+        "dead"           : false,
+        "buildTime"      : "2008-08-08",
+        "class"          : 8
+        "buyProduct"     : [false, true, true],
+        "productPercent" : [50, 20, 100],
+        "productAmount"  : [323, 122, 2000],
+        "update"         : "2008-08-08"
+    }
+    "navHaz"      : 0,
+    "figs"        : 20,
+    "minesArmid"  : {
+        "quantity"  : 2,
+        "owner"     : "BobTrader"
+    }
+    "minesLimpet"  : {
+        "quantity"  : 4,
+        "owner"     : "BobTrader"
+    }
+    "constellation" : "Great constellation",
+    "beacon"        : "Run away",
+    "update"        : "2008-08-08",
+    "anomoly"       : true,
+    "density"       : 500,
+    "explored"      : "holo",
+    "ships"         : [52,21],
+    "traders"       : ["JimTrader", "BobTrader"],
+    "planets"       : [23, 42]
+}
+}}}
+
+
 = Implementations =
 
  * TWXProxy could optionally encode structured information into the text stream as it parses it internally
