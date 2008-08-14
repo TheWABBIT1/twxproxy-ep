@@ -56,6 +56,7 @@ type
     FAcceptExternal  : Boolean;
     FBroadCastMsgs   : Boolean;
     FLocalEcho       : Boolean;
+    FHipsSupported   : Boolean;
 
   private
     function GetClientType(Index : Integer) : TClientType;
@@ -74,6 +75,8 @@ type
     procedure SetBroadCastMsgs(Value: Boolean);
     function GetLocalEcho: Boolean;
     procedure SetLocalEcho(Value: Boolean);
+    function GetHipsSupported: Boolean;
+    procedure SetHipsSupported(Value: Boolean);
 
   protected
     procedure tcpServerClientConnect(Sender: TObject; Socket: TCustomWinSocket);
@@ -102,6 +105,7 @@ type
     property AcceptExternal: Boolean read GetAcceptExternal write SetAcceptExternal;
     property BroadCastMsgs: Boolean read GetBroadCastMsgs write SetBroadCastMsgs;
     property LocalEcho: Boolean read GetLocalEcho write SetLocalEcho;
+    property HipsSupported: Boolean read GetHipsSupported write SetHipsSupported;
   end;
 
   TModClient = class(TTWXModule, IModClient)
@@ -632,6 +636,16 @@ begin
   FLocalEcho := Value;
 end;
 
+function TModServer.GetHipsSupported: Boolean;
+begin
+  Result := FHipsSupported;
+end;
+
+procedure TModServer.SetHipsSupported(Value: Boolean);
+begin
+  FHipsSupported := Value;
+end;
+
 
 // ***************** TModClient Implementation *********************
 
@@ -840,6 +854,10 @@ begin
           TransmitOp(OP_WILL, 3);
           TransmitOp(OP_WILL, 0);
           TransmitOp(OP_WILL, 1);
+
+          // Ask to enable HIPS
+          TransmitOp(OP_WILL, 76);
+
           Func := Done; // EP
         end
         else if (TNOp = OP_DO) then
@@ -850,6 +868,10 @@ begin
 
             //if (S[I] = #200) then
               //FClientEchoMarks[SktIndex] := TRUE;
+          end
+          else if (S[I] = #76) then
+          begin
+            TWXServer.SetHipsSupported(TRUE);
           end
           else
             TransmitOp(OP_WONT, Byte(S[I]));

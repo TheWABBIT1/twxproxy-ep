@@ -47,6 +47,9 @@ const
   ANSI_CLEARLINE = #27 + '[K';
   ANSI_MOVEUP = #27 + '[1A';
 
+  ANSI_CONCEAL = #27 + '[8M';
+  ANSI_REVEAL = #27 + '[28M';
+
 implementation
 
 end.
