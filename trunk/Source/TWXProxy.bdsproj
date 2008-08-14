@@ -119,11 +119,11 @@
 			<Linker Name="ExeDescription"></Linker>
 		</Linker>
 		<Directories>
-			<Directories Name="OutputDir">..\Builds</Directories>
+			<Directories Name="OutputDir">..\..\Builds</Directories>
 			<Directories Name="UnitOutputDir"></Directories>
 			<Directories Name="PackageDLLOutputDir"></Directories>
 			<Directories Name="PackageDCPOutputDir"></Directories>
-			<Directories Name="SearchPath">$(BDS)\lib\Debug;..\Components\ICS\Vc32;..\Components\Misc</Directories>
+			<Directories Name="SearchPath">$(BDS)\Lib\Debug\Indy10;$(BDS)\lib\Debug;..\Components\ICS\Vc32;..\Components\Misc;..\Components</Directories>
 			<Directories Name="Packages">vclx;vcl;rtl;dbrtl;vcldb;dbxcds;dbexpress;xmlrtl;vclie;inet;inetdbbde;inetdbxpress;dsnap;adortl;dclOfficeXP;soaprtl;vclactnband;bdertl;vcldbx</Directories>
 			<Directories Name="Conditionals"></Directories>
 			<Directories Name="DebugSourceDirs"></Directories>
