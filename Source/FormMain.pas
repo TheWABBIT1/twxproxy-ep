@@ -86,7 +86,7 @@ type
     N5: TMenuItem;
     miExportBubble: TMenuItem;
     miExportDeadend: TMenuItem;
-    //trayIcon: TTrayIcon;
+    trayIcon: TTrayIcon;
     //Encryptor: TEncryptor;
     N6: TMenuItem;
     miExportTWX: TMenuItem;
@@ -105,7 +105,7 @@ type
     procedure miLoadClick(Sender: TObject);
 
     procedure miHistoryClick(Sender: TObject);
-    //procedure trayIconDblClick(Sender: TObject);
+    procedure trayIconDblClick(Sender: TObject);
     procedure tmrHideFormTimer(Sender: TObject);
     procedure miExportClick(Sender: TObject);
     procedure miImportClick(Sender: TObject);
@@ -165,12 +165,16 @@ begin
   FProgramDir := (Owner as TModGUI).ProgramDir;
   LoadingScript := FALSE;
   miStop.Visible := False;
+  if Debug = 1 then
+    trayIcon.Visible := TRUE
+  else
+    trayIcon.Visible := FALSE;
 end;
 
 procedure TfrmMain.SetDatabaseName(const Value : string);
 begin
   FDatabaseName := Value;
-  //trayIcon.Hint := 'TWX Proxy: ' + Value;
+  trayIcon.Hint := 'TWX Proxy: ' + Value;
 end;
 
 function TfrmMain.GetDatabaseName : string;
@@ -370,7 +374,7 @@ end;
 
 procedure TfrmMain.SetToolTip(ToolTip : string);
 begin
-  //trayIcon.Hint := ToolTip;
+  trayIcon.Hint := ToolTip;
 end;
 
 procedure TfrmMain.miImportClick(Sender: TObject);
@@ -685,7 +689,7 @@ end;
 
 
 
-{procedure TfrmMain.trayIconDblClick(Sender: TObject);
+procedure TfrmMain.trayIconDblClick(Sender: TObject);
 begin
   SetForegroundWindow(Application.Handle);
 
@@ -693,7 +697,7 @@ begin
     miLoadClick(Sender)
   else if (miConnect.Default) then
     miConnectClick(Sender);
-end;}
+end;
 
 procedure TfrmMain.tmrHideFormTimer(Sender: TObject);
 begin

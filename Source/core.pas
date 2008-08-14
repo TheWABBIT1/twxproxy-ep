@@ -36,7 +36,7 @@ const
   ProgramVersion = '2.05';
   ReleaseVersion = 'Beta Version';
   SetupFile = 'TWXSetup.dat';
-
+  Debug = 0;
   endl = #13 + #10;
 
 type
