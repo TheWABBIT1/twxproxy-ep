@@ -36,7 +36,7 @@ const
   ProgramVersion = '2.05';
   ReleaseVersion = 'Beta Version';
   SetupFile = 'TWXSetup.dat';
-  Debug = 0;
+  Debug = 1;
   endl = #13 + #10;
 
 type
@@ -130,8 +130,11 @@ type
     procedure SetBroadCastMsgs(Value: Boolean);
     function GetLocalEcho: Boolean;
     procedure SetLocalEcho(Value: Boolean);
+    function GetHipsSupported: Boolean;
+    procedure SetHipsSupported(Value: Boolean);
 
     property LocalEcho: Boolean read GetLocalEcho write SetLocalEcho;
+    property HipsSupported: Boolean read GetHipsSupported write SetHipsSupported;
     property ListenPort: Word read GetListenPort write SetListenPort;
     property AcceptExternal: Boolean read GetAcceptExternal write SetAcceptExternal;
     property BroadCastMsgs: Boolean read GetBroadCastMsgs write SetBroadCastMsgs;
