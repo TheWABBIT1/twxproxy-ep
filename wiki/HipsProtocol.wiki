@@ -36,11 +36,13 @@ If the server gets no response, it is assumed HIPS is not supported.
 = Known Namespaces =
 These are namespaces that are known to use this protocol:
 == tw ==
-The 'tw' namespace is for common messages in the game TradeWars 2002.  The following are messages in this namespace and examples of their use.
+The 'tw' namespace is for common messages in the game TradeWars 2002.  Messages will contain data structures representing the information that is being displayed on the screen.  The protocol doesn't take into account whether the client has already encountered the information or not.
 
-=== tw.sectorUpdate ===
+The following are messages in this namespace and examples of their use.
+
+=== tw.sector ===
 {{{
-tw.sectorUpdate={
+tw.sector={
     "warp"       : [10, 203, 442],
     "port"       : {
         "name"           : "Some port",
@@ -74,6 +76,12 @@ tw.sectorUpdate={
 }
 }}}
 
+=== tw.status ===
+{{{
+tw.status={
+    "sector"       : 3
+}
+}}}
 
 = Implementations =
 
