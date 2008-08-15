@@ -24,6 +24,11 @@
 -->
 
 <project name="jta" basedir="." default="build">
+  <path id="cp">
+    <fileset dir="lib">
+      <include name="**/*.jar"/>
+    </fileset>
+  </path>
 
   <target name="init">
     <property name="name" value="jta"/>
@@ -50,15 +55,14 @@
   </target>
 
   <target name="compile">
-    <javac srcdir="src" includes="de/mud/**" excludes="de/mud/flash/**" debug="${debug}" destdir="build">
-      <classpath>
-        <pathelement location="lib/nimrodlf-1.0d.jar"/>
-      </classpath>
-    </javac>
+    <javac srcdir="src" includes="de/mud/**" excludes="de/mud/flash/**" debug="${debug}" destdir="build"
+        classpathref="cp" />
     <copy todir="build">
         <fileset dir="src" excludes="**/*.java" />
     </copy>
-    <unzip dest="build" src="lib/nimrodlf-1.0d.jar" /> 
+    <unzip dest="build">
+        <fileset dir="lib" includes="*.jar" />
+    </unzip>
   </target>
 
   <target name="compile-contrib">

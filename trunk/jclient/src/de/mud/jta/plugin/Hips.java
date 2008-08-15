@@ -4,6 +4,8 @@ import de.mud.jta.FilterPlugin;
 import de.mud.jta.Plugin;
 import de.mud.jta.PluginBus;
 import de.mud.jta.VisualPlugin;
+import de.mud.jta.plugin.hips.HipsMessageProcessor;
+import de.mud.jta.plugin.hips.StatusPanel;
 import de.mud.jta.event.OnlineStatusListener;
 
 import javax.swing.*;
@@ -30,9 +32,12 @@ public class Hips extends Plugin
     private static final byte[] TELNET_DO_HIPS = new byte[]{(byte) 255, (byte) 253, 76};
 
     private final ByteArrayOutputStream hipsBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream outputBuffer = new ByteArrayOutputStream();
+    private final HipsMessageProcessor hipsMessageProcessor;
 
     private FilterPlugin source;
     private boolean inHips;
+    private StatusPanel statusPanel;
 
     /**
      * Create a new plugin and set the plugin bus used by this plugin and
@@ -57,6 +62,10 @@ public class Hips extends Plugin
             public void offline() {
             }
         });
+
+        statusPanel = new StatusPanel();
+        hipsMessageProcessor = new HipsMessageProcessor(statusPanel);
+
     }
 
     public void setFilterSource(FilterPlugin source) throws IllegalArgumentException {
@@ -69,49 +78,7 @@ public class Hips extends Plugin
 
     public int read(byte[] barr) throws IOException {
         int len = source.read(barr);
-        for (int x = 0; x < len; x++) {
-            byte b = barr[x];
-
-            if (TELNET_WILL_HIPS[willHipsPos] == b) {
-                System.out.println("will hips pos " + willHipsPos);
-                willHipsPos++;
-                if (TELNET_WILL_HIPS.length == willHipsPos) {
-                    source.write(TELNET_DO_HIPS);
-                    System.out.println("DO HIPS");
-                    willHipsPos = 0;
-                }
-            } else {
-                willHipsPos = 0;
-            }
-
-            System.out.println("In hips: "+inHips+" concealPos:"+concealPos+" revealPos:"+revealPos);
-            if (!inHips) {
-                if (ANSI_CONCEAL[concealPos] == b) {
-                    concealPos++;
-                } else {
-                    concealPos = 0;
-                }
-                if (ANSI_CONCEAL.length == concealPos) {
-                    inHips = true;
-                    concealPos = 0;
-                    hipsBuffer.reset();
-                }
-            } else {
-                if (ANSI_REVEAL[revealPos] == b) {
-                    revealPos++;
-                } else {
-                    revealPos = 0;
-                }
-                if (ANSI_REVEAL.length == revealPos) {
-                    System.out.println("Collected " + new String(hipsBuffer.toByteArray(), 0, hipsBuffer.size() - 2));
-                    revealPos = 0;
-                    inHips = false;
-                } else {
-                    hipsBuffer.write(b);
-                }
-            }
-        }
-        return len;
+        return scanBytesForHips(barr, len);
     }
 
     public void write(byte[] b) throws IOException {
@@ -119,10 +86,61 @@ public class Hips extends Plugin
     }
 
     public JComponent getPluginVisual() {
-        return null;
+        return statusPanel;
     }
 
     public JMenu getPluginMenu() {
         return null;
+    }
+
+    public int scanBytesForHips(byte[] barr, int len) throws IOException {
+        for (int x = 0; x < len; x++) {
+            byte b = barr[x];
+
+            if (Hips.TELNET_WILL_HIPS[willHipsPos] == b) {
+                //System.out.println("will hips pos " + willHipsPos);
+                willHipsPos++;
+                if (Hips.TELNET_WILL_HIPS.length == willHipsPos) {
+                    source.write(Hips.TELNET_DO_HIPS);
+                    System.out.println("DO HIPS");
+                    willHipsPos = 0;
+                }
+            } else {
+                willHipsPos = 0;
+            }
+
+            //System.out.println("In hips: "+inHips+" concealPos:"+concealPos+" revealPos:"+revealPos);
+            if (!inHips) {
+                if (Hips.ANSI_CONCEAL[concealPos] == b) {
+                    concealPos++;
+                } else {
+                    concealPos = 0;
+                }
+                if (Hips.ANSI_CONCEAL.length == concealPos) {
+                    inHips = true;
+                    concealPos = 0;
+                    hipsBuffer.reset();
+                }
+                outputBuffer.write(b);
+            } else {
+                if (Hips.ANSI_REVEAL[revealPos] == b) {
+                    revealPos++;
+                } else {
+                    revealPos = 0;
+                }
+                if (Hips.ANSI_REVEAL.length == revealPos) {
+                    hipsMessageProcessor.process(new String(hipsBuffer.toByteArray(), 0, hipsBuffer.size() - 4));
+                    revealPos = 0;
+                    inHips = false;
+                    outputBuffer.write(Hips.ANSI_REVEAL);
+                } else {
+                    hipsBuffer.write(b);
+                }
+            }
+        }
+        byte[] returnBytes = outputBuffer.toByteArray();
+        System.arraycopy(returnBytes, 0, barr, 0, returnBytes.length);
+        outputBuffer.reset();
+        return returnBytes.length;
     }
 }

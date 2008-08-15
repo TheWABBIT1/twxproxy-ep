@@ -48,6 +48,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
@@ -95,7 +96,10 @@ public class Main {
       
     final Properties options = new Properties();
     try {
-      options.load(Main.class.getResourceAsStream("/de/mud/jta/default.conf"));
+        InputStream in = Main.class.getResourceAsStream("/de/mud/jta/default.conf");
+        if (in == null)
+            in = Main.class.getResourceAsStream("de/mud/jta/default.conf");
+      options.load(in);
     } catch (IOException e) {
       System.err.println("jta: cannot load default.conf");
     }
@@ -206,7 +210,7 @@ public class Main {
           String destination =
                   JOptionPane.showInputDialog(frame,
                                               new JLabel("Enter your destination host (host[:port])"),
-                                              "Connect", JOptionPane.QUESTION_MESSAGE
+                                              "localhost:2323"
                   );
           if (destination != null) {
             int sep = 0;
