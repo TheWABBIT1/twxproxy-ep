@@ -33,6 +33,8 @@ public class HipsMessageProcessor {
     }
 
     public void process(String message) {
+
+        System.out.println("processing message "+message);
         int equalsPos = message.indexOf('=');
 
         String namespace = null;
@@ -47,7 +49,7 @@ public class HipsMessageProcessor {
 
         Object handler = handlers.get(namespace);
         if (handler == null) {
-            System.err.println("Invalid namespace: "+namespace);
+            System.err.println("Invalid namespace: "+namespace+" in message "+message);
             return;
         }
 

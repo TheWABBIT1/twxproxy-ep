@@ -33,7 +33,8 @@ uses
   Observer,
   SysUtils,
   DataBase,
-  Classes;
+  Classes,
+  Hips;
 
 type
   TSectorPosition = (spNormal, spPorts, spPlanets, spShips, spMines, spTraders);
@@ -62,6 +63,7 @@ type
     FCurrentSector      : TSector;
     FInAnsi             : Boolean;
     FMenuKey            : Char;
+    FHips               : THips;
 
     procedure SectorCompleted;
     procedure ResetSectorLists;
@@ -113,6 +115,7 @@ begin
   FShipList := TList.Create;
   FTraderList := TList.Create;
   FPlanetList := TList.Create;
+  FHips := THips.Create;
 
   MenuKey := '$';
 end;
@@ -188,6 +191,10 @@ begin
 
   FCurrentSector.UpDate := Now;
   FCurrentSector.Explored := etHolo;
+
+  if (TWXServer.HipsSupported) then
+    FHips.SendSectorHoloUpdate(FCurrentSectorIndex, FCurrentSector.UpDate);
+
   FSectorSaved := TRUE;
   WarpIndex := 0;
 
@@ -224,6 +231,9 @@ begin
     // Record Current Sector Index
     FCurrentSectorIndex := StrToIntSafe(Copy(Line, 24, (AnsiPos('(', Line) - 26)));
 
+    if (TWXServer.HipsSupported) then
+      FHips.SendStatusSector(FCurrentSectorIndex);
+
     // No displays anymore, all done
     FCurrentDisplay := dNone;
     FLastWarp := 0;
@@ -245,6 +255,10 @@ begin
 
     // Record Current Sector Index to SysConstant CURRENTSECTOR
     FCurrentSectorIndex := StrToIntSafe(Copy(Line, 33, (AnsiPos('(', Line) - 35)));
+
+    if (TWXServer.HipsSupported) then
+      FHips.SendStatusSector(FCurrentSectorIndex);
+
 
   end
   else if (Copy(Line, 1, 25) = 'Citadel treasury contains') then
@@ -315,11 +329,17 @@ begin
   if (Pos < 7) then
     S.Warp[Pos] := Warp;
 
+  if (TWXServer.HipsSupported) then
+    FHips.SendAddWarp(SectNum, Warp);
+
   if (S.Explored = etNo) then
   begin
     S.Constellation := '???' + ANSI_9 + ' (warp calc only)';
     S.Explored := etCalc;
     S.Update := Now;
+    if (TWXServer.HipsSupported) then
+      FHips.SendSectorWarpCalcUpdate(SectNum, S.Update);
+
   end;
 
   TWXDatabase.SaveSector(S, SectNum, nil, nil, nil);
@@ -355,7 +375,9 @@ begin
         exit;
 
       if (LastSect > 0) then
+      begin
         AddWarp(LastSect, CurSect);
+      end;
 
       LastSect := CurSect;
       FLastWarp := CurSect;
