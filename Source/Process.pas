@@ -230,7 +230,7 @@ begin
     FCurrentSectorIndex := StrToIntSafe(Copy(Line, 24, (AnsiPos('(', Line) - 26)));
 
     if (TWXServer.HipsSupported) then
-      FHips.SendStatusSector(FCurrentSectorIndex);
+      FHips.SendCommandPrompt(FCurrentSectorIndex);
 
     // No displays anymore, all done
     FCurrentDisplay := dNone;
@@ -255,7 +255,7 @@ begin
     FCurrentSectorIndex := StrToIntSafe(Copy(Line, 33, (AnsiPos('(', Line) - 35)));
 
     if (TWXServer.HipsSupported) then
-      FHips.SendStatusSector(FCurrentSectorIndex);
+      FHips.SendComputerPrompt(FCurrentSectorIndex);
 
 
   end
@@ -666,11 +666,15 @@ begin
     begin
       FCurrentSector.Mines_Armid.Quantity := StrToIntSafe(GetParameter(Line, 3));
       FCurrentSector.Mines_Armid.Owner := S;
+      if (TWXServer.HipsSupported) then
+        FHips.SendSectorArmidMines(FCurrentSectorIndex, FCurrentSector.Mines_Armid);
     end
     else
     begin
       FCurrentSector.Mines_Limpet.Quantity := StrToIntSafe(GetParameter(Line, 3));
       FCurrentSector.Mines_Limpet.Owner := S;
+      if (TWXServer.HipsSupported) then
+        FHips.SendSectorLimpetMines(FCurrentSectorIndex, FCurrentSector.Mines_Limpet);
     end;
   end
   else if (Copy(Line, 1, 8) = '        ') then
@@ -682,9 +686,15 @@ begin
       I := GetParameterPos(Line, 6) + 1;
       FCurrentSector.Mines_Limpet.Quantity := StrToIntSafe(GetParameter(Line, 2));
       FCurrentSector.Mines_Limpet.Owner := Copy(Line, I, length(Line) - I);
+      if (TWXServer.HipsSupported) then
+        FHips.SendSectorLimpetMines(FCurrentSectorIndex, FCurrentSector.Mines_Limpet);
     end
     else if (FSectorPosition = spPorts) then
-      FCurrentSector.SPort.BuildTime := StrToIntSafe(GetParameter(Line, 4))
+    begin
+      FCurrentSector.SPort.BuildTime := StrToIntSafe(GetParameter(Line, 4));
+      if (TWXServer.HipsSupported) then
+        FHips.SendPortBuildTime(FCurrentSectorIndex, FCurrentSector.SPort.BuildTime);
+    end
     else if (FSectorPosition = spPlanets) then
     begin
       // Get planet data
@@ -769,6 +779,9 @@ begin
     // sector done
     if not (FSectorSaved) then
       SectorCompleted;
+
+    if (TWXServer.HipsSupported) then
+      FHips.SendSectorWarps(FCurrentSectorIndex, FCurrentSector.Warp);
 
     // No displays anymore, all done
     FCurrentDisplay := dNone;
@@ -868,6 +881,10 @@ begin
 
     // That's all of the product info, so save it now
     FCurrentSector.SPort.UpDate := Now;
+
+    if (TWXServer.HipsSupported) then
+      FHips.SendCommerceReport(FCurrentSectorIndex, FCurrentSector.SPort);
+
     TWXDatabase.SaveSector(FCurrentSector, FPortSectorIndex, nil, nil, nil);
   end;
 end;
@@ -885,6 +902,8 @@ begin
   if (Copy(Line,1,20) = 'No fighters deployed') then
   begin
     ResetFigDatabase();
+    if (TWXServer.HipsSupported) then
+      FHips.SendNoDeployedFighters();
   end;  // no fighters in G list anymore, have to reset database.
 
   Val(GetParameter(Line,1), SectorNum, Code);
@@ -935,6 +954,9 @@ begin
   begin
     Sect.Figs.FigType := ftOffensive;
   end;
+
+  if (TWXServer.HipsSupported) then
+      FHips.SendSectorFighters(SectorNum, Sect.Figs);
 
   // save the change.
   TWXDatabase.SaveSector(Sect,SectorNum,nil,nil,nil);
@@ -1034,6 +1056,8 @@ begin
     I := StrToIntSafe(Copy(Line, 44, AnsiPos('.', Line) - 44));
     if (I > 0) and (I <= TWXDatabase.DBHeader.Sectors) then
     begin
+      if (TWXServer.HipsSupported) then
+         FHips.SendStarDockSector(I);
       if (TWXDatabase.DBHeader.StarDock = 0) then
       begin
         Sect.Constellation := 'The Federation';
@@ -1045,6 +1069,7 @@ begin
         Sect.SPort.ClassIndex := 9;
         Sect.Explored := etCalc;
         Sect.Update := Now;
+
         TWXDatabase.SaveSector(Sect, I, nil, nil, nil);
       end;
     end;
@@ -1090,6 +1115,8 @@ begin
     FCurrentSectorIndex := StrToIntSafe(GetParameter(Line, 3));
     I := GetParameterPos(Line, 5);
     FCurrentSector.Constellation := Copy(Line, I, length(Line) - I + 1);
+    if (TWXServer.HipsSupported) then
+      FHips.SendSectorConstellation(FCurrentSectorIndex, FCurrentSector.Constellation);
   end
   else if (FCurrentDisplay = dSector) then
     ProcessSectorLine(Line)
@@ -1155,6 +1182,9 @@ begin
       Sect.Explored := etDensity;
       Sect.Update := Now;
     end;
+
+    if (TWXServer.HipsSupported) then
+      FHips.SendSectorDensityScan(I, Sect);
 
     TWXDatabase.SaveSector(Sect, I, nil, nil, nil);
   end
