@@ -159,12 +159,12 @@ end;
 
 procedure THips.SendSectorNavhaz(Sector : Integer; NavHaz : Byte);
 begin
-  TWXServer.Broadcast(ANSI_CONCEAL + 'tw.sector={"id":' + IntToStr(Sector) + ',"navhaz":' + IntToStr(NavHaz) + '}' + ANSI_REVEAL);
+  TWXServer.Broadcast(ANSI_CONCEAL + 'tw.sector={"id":' + IntToStr(Sector) + ',"navHaz":' + IntToStr(NavHaz) + '}' + ANSI_REVEAL);
 end;
 
 procedure THips.SendSectorPlanet(Sector : Integer; Name : string);
 begin
-  TWXServer.Broadcast(ANSI_CONCEAL + 'tw.planet={"id":' + IntToStr(Sector) + ',"name":"' + Name + '"}' + ANSI_REVEAL);
+  TWXServer.Broadcast(ANSI_CONCEAL + 'tw.planet={"sector":' + IntToStr(Sector) + ',"name":"' + Name + '"}' + ANSI_REVEAL);
 end;
 
 procedure THips.SendPortBuildTime(Sector : Integer; BuildTime : Byte);
@@ -259,7 +259,7 @@ begin
   TWXServer.Broadcast(ANSI_CONCEAL + 'tw.sector={"id":' + IntToStr(Index) + ',');
   TWXServer.Broadcast('"density":' + IntToStr(Sector.Density) + ',');
   TWXServer.Broadcast('"anomoly":' + BoolToJsonStr(Sector.Anomoly) + ',');
-  TWXServer.Broadcast('"navhaz":' + IntToStr(Sector.NavHaz) + ',');
+  TWXServer.Broadcast('"navHaz":' + IntToStr(Sector.NavHaz) + ',');
   TWXServer.Broadcast('"numWarps":' + IntToStr(Sector.Warps));
   TWXServer.Broadcast('}' + ANSI_REVEAL);
 end;
