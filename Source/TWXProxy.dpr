@@ -57,7 +57,8 @@ uses
   Persistence in 'Persistence.pas',
   GUI in 'GUI.pas',
   Observer in 'Observer.pas',
-  Messages;
+  Messages,
+  Hips in 'Hips.pas';
 
 {$R *.RES}
 
