@@ -1,4 +1,4 @@
-#summary Hidden-In-Plain-Sight Protocol for storing structured data in Telnet markup
+#summary [DRAFT] Hidden-In-Plain-Sight Protocol for storing structured data in Telnet markup
 
 = Introduction =
 
@@ -23,6 +23,12 @@ Esc[8mlogin={"name":"John Doe"}Esc[28m
 }}}
 Which creates a message object in a hash map format with a single entry, "name", set to "John Doe".
 
+HIPS messages should be not be sent to the user's terminal, because HIPS interprets the conceal and reveal ANSI codes to mean nothing is displayed to the user.  Some terminals may show a blank space for every character, which will probably break the display.
+
+{{{
+If the interpretation of the conceal and reveal codes is not feasible, a later version of this protocol may adopt a new set of ASCII escape codes out of the ones currently unused.
+}}}
+
 == Telnet negotation ==
 
 Not all terminals support the conceal commands, so we need a way for the server to know if it should use them to embed the structured data.  The [http://www.iana.org/assignments/telnet-options telnet options negotiation] is a proven way for the client and server to determine if certain features are supported, so HIPS negotiation will use the unassigned option code '76'.
@@ -38,52 +44,206 @@ These are namespaces that are known to use this protocol:
 == tw ==
 The 'tw' namespace is for common messages in the game TradeWars 2002.  Messages will contain data structures representing the information that is being displayed on the screen.  The protocol doesn't take into account whether the client has already encountered the information or not.
 
-The following are messages in this namespace and examples of their use.
+The following are TradeWars screens and example messages.
 
-=== tw.sector ===
+=== Prompts ===
+==== Command Prompt ====
+{{{
+tw.commandPrompt={
+    "sector" : 33
+}
+}}}
+==== Computer Prompt ====
+{{{
+tw.computerPrompt={
+    "sector" : 33
+}
+}}}
+==== Sector Display ====
+Each line in the sector display gets its own message that represents their data, with the exception
+of ships, traders, and planets, which cover multiple lines.
+===== Constellation =====
 {{{
 tw.sector={
-    "warp"       : [10, 203, 442],
-    "port"       : {
-        "name"           : "Some port",
-        "dead"           : false,
-        "buildTime"      : "2008-08-08",
-        "class"          : 8
-        "buyProduct"     : [false, true, true],
-        "productPercent" : [50, 20, 100],
-        "productAmount"  : [323, 122, 2000],
-        "update"         : "2008-08-08"
-    }
-    "navHaz"      : 0,
-    "figs"        : 20,
-    "minesArmid"  : {
-        "quantity"  : 2,
-        "owner"     : "BobTrader"
-    }
-    "minesLimpet"  : {
-        "quantity"  : 4,
-        "owner"     : "BobTrader"
-    }
-    "constellation" : "Great constellation",
-    "beacon"        : "Run away",
-    "update"        : "2008-08-08",
-    "anomoly"       : true,
-    "density"       : 500,
-    "explored"      : "holo",
-    "ships"         : [52,21],
-    "traders"       : ["JimTrader", "BobTrader"],
-    "planets"       : [23, 42]
+    "id"            : 2
+    "constellation" : "Fedspace"
 }
 }}}
-
-=== tw.status ===
+===== Beacon =====
 {{{
-tw.status={
-    "sector"       : 3
+tw.sector={
+    "id"            : 2
+    "beacon"        : "Stay away"
 }
 }}}
-
+===== Port =====
+{{{
+tw.port={
+    "id"            : 2
+    "dead"          : false,
+    "class"         : 2,
+    "buildTime"     : 0,
+    "name"          : "Some Port Name"
+}
+}}}
+===== Port Build Time=====
+{{{
+tw.port={
+    "id"            : 2
+    "buildTime"     : 3
+}
+}}}
+===== Trader =====
+{{{
+tw.trader={
+    "sector"        : 2
+    "name"          : "Bob Trader",
+    "shipType"      : "SomeIndustry Merchant Ship",
+    "figs"          : 500
+}
+}}}
+===== Ship =====
+{{{
+tw.ship={
+    "sector"        : 2
+    "name"          : "The Fast Ship",
+    "owner"         : "Bob Trader",
+    "shipType"      : "SomeIndustry Merchant Ship",
+    "figs"          : 500
+}
+}}}
+===== Planet =====
+{{{
+tw.planet={
+    "sector"        : 2
+    "name"          : "My Planet"
+}
+}}}
+===== NavHaz =====
+{{{
+tw.sector={
+    "id"            : 2
+    "navHaz"        : 23
+}
+}}}
+===== Limpet Mines =====
+{{{
+tw.limpetMines={
+    "sector"        : 2
+    "quantity"      : 4,
+    "owner"         : "Bob Trader
+}
+}}}
+===== Armid Mines =====
+{{{
+tw.armidMines={
+    "sector"        : 2
+    "quantity"      : 4,
+    "owner"         : "Bob Trader
+}
+}}}
+===== Fighters =====
+{{{
+tw.fighters={
+    "sector"        : 2
+    "quantity"      : 4,
+    "owner"         : "Bob Trader,
+    "figType"       : "toll"
+}
+}}}
+===== Warps =====
+{{{
+tw.sector={
+    "id"            : 2
+    "warps"         : [1,5,243]
+}
+}}}
+==== CIM ====
+These messages are fired per line in a CIM report
+===== Warps =====
+{{{
+tw.sector={
+    "id"            : 2
+    "warps"         : [1,5,243]
+}
+}}}
+===== Port =====
+{{{
+tw.port={
+    "id"             : 2
+    "productAmounts" : {
+        "fuelOre"       : 2302,
+        "organics"      : 201,
+        "equipment"     : 1044
+        },
+    "productPercents": {
+        "fuelOre"       : 100,
+        "organics"      : 13,
+        "equipment"     : 60
+        },
+    "class"         : 2
+}
+}}}
+==== Port Docking ====
+These messages fire when docking at a port
+===== Commerce Report =====
+{{{
+tw.port={
+    "id"             : 2,
+    "name"           : "My Port",
+    "productAmounts" : {
+        "fuelOre"       : 2302,
+        "organics"      : 201,
+        "equipment"     : 1044
+        },
+    "productPercents": {
+        "fuelOre"       : 100,
+        "organics"      : 13,
+        "equipment"     : 60
+        },
+    "class"         : 2
+}
+}}}
+==== Miscellaneous ====
+Everything else...
+===== Warp Calculation =====
+{{{
+tw.warp={
+    "from"          : 2
+    "to"            : 4
+}
+}}}
+===== No Deployed Fighters =====
+{{{
+tw.noDeployedFighters={}
+}}}
+===== StarDock in Game Stats =====
+{{{
+tw.sector={
+    "id"            : 23
+    "beacon"        : "FedSpace, FedLaw Enforced",
+    "constellation" : "The Federation"
+}
+}}}
+{{{
+tw.port={
+    "id"            : 23
+    "dead"          : false,
+    "class"         : 9,
+    "buildTime"     : 0,
+    "name"          : "Stargate Alpha I"
+}
+}}}
+===== Density Scan =====
+{{{
+tw.sector={
+    "id"            : 23
+    "density"       : 600,
+    "anomoly"       : false,
+    "numWarps"      : 3
+}
+}}}
 = Implementations =
 
- * TWXProxy could optionally encode structured information into the text stream as it parses it internally
+ * TWXProxy 2.0.5+
  * TWGS (wishful thinking)
