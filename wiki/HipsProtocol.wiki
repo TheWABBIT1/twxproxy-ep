@@ -1,4 +1,5 @@
 #summary [DRAFT] Hidden-In-Plain-Sight Protocol for storing structured data in Telnet markup
+#labels Featured,Phase-Design
 
 = Introduction =
 
