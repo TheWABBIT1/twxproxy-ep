@@ -2,15 +2,19 @@
 
 = Basic =
 
-http://makoa.twdata.org/twxclient/tw-screen.png
+http://www.twdata.org/twxclient/tw-screen.png
 
 = Top menu =
 
-http://makoa.twdata.org/twxclient/tw-menu.png
+http://www.twdata.org/twxclient/tw-menu.png
 
 = Connect dialog =
 
-http://makoa.twdata.org/twxclient/tw-connect.png
+http://www.twdata.org/twxclient/tw-connect.png
+
+= Beginnings of a status bar =
+
+http://www.twdata.org/twxclient/tw-status-beg.png
 
 = Nimrod config =
 {{{
