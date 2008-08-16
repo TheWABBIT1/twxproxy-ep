@@ -127,6 +127,7 @@ begin
   FShipList.Free;
   FTraderList.Free;
   FPlanetList.Free;
+  FHips.Free;
 
   inherited;
 end;
@@ -191,9 +192,6 @@ begin
 
   FCurrentSector.UpDate := Now;
   FCurrentSector.Explored := etHolo;
-
-  if (TWXServer.HipsSupported) then
-    FHips.SendSectorHoloUpdate(FCurrentSectorIndex, FCurrentSector.UpDate);
 
   FSectorSaved := TRUE;
   WarpIndex := 0;
@@ -302,6 +300,9 @@ begin
 
   S := TWXDatabase.LoadSector(SectNum);
 
+  if (TWXServer.HipsSupported) then
+    FHips.SendAddWarp(SectNum, Warp);
+
   // see if the warp is already in there
   for I := 1 to 6 do
     if (S.Warp[I] = Warp) then
@@ -329,17 +330,11 @@ begin
   if (Pos < 7) then
     S.Warp[Pos] := Warp;
 
-  if (TWXServer.HipsSupported) then
-    FHips.SendAddWarp(SectNum, Warp);
-
   if (S.Explored = etNo) then
   begin
     S.Constellation := '???' + ANSI_9 + ' (warp calc only)';
     S.Explored := etCalc;
     S.Update := Now;
-    if (TWXServer.HipsSupported) then
-      FHips.SendSectorWarpCalcUpdate(SectNum, S.Update);
-
   end;
 
   TWXDatabase.SaveSector(S, SectNum, nil, nil, nil);
@@ -451,6 +446,9 @@ begin
       S.Update := Now;
     end;
 
+    if (TWXServer.HipsSupported) then
+      FHips.SendSectorWarps(Sect, S.Warp);
+
     TWXDatabase.SaveSector(S, Sect, nil, nil, nil);
   end
   else
@@ -539,6 +537,9 @@ begin
       S.Update := Now;
     end;
 
+    if (TWXServer.HipsSupported) then
+      FHips.SendCimPort(Sect, S.SPort);
+
     TWXDatabase.SaveSector(S, Sect, nil, nil, nil);
   end;
 end;
@@ -555,6 +556,8 @@ begin
   begin
     // Get beacon text
     FCurrentSector.Beacon := Copy(Line, 11, length(Line) - 10);
+    if (TWXServer.HipsSupported) then
+      FHips.SendSectorBeacon(FCurrentSectorIndex, FCurrentSector.Beacon);
   end
   else if (Copy(Line, 1, 10) = 'Ports   : ') then
   begin
@@ -585,6 +588,8 @@ begin
       else
         FCurrentSector.SPort.BuyProduct[ptEquipment] := FALSE;
     end;
+    if (TWXServer.HipsSupported) then
+        FHips.SendSectorPort(FCurrentSectorIndex, FCurrentSector.SPort);
 
     FSectorPosition := spPorts;
   end
@@ -595,6 +600,9 @@ begin
     TWXDatabase.NULLPlanet(NewPlanet^);
     NewPlanet^.Name := Copy(Line, 11, length(Line) - 10);
     FPlanetList.Add(NewPlanet);
+
+    if (TWXServer.HipsSupported) then
+        FHips.SendSectorPlanet(FCurrentSectorIndex, NewPlanet^.Name);
 
     FSectorPosition := spPlanets;
   end
@@ -635,12 +643,17 @@ begin
       FCurrentSector.Figs.FigType := ftDefensive
     else
       FCurrentSector.Figs.FigType := ftOffensive;
+
+    if (TWXServer.HipsSupported) then
+        FHips.SendSectorFighters(FCurrentSectorIndex, FCurrentSector.Figs);
   end
   else if (Copy(Line, 1, 10) = 'NavHaz  : ') then
   begin
     S := GetParameter(Line, 3);
     S := Copy(S, 1, length(S) - 1);
     FCurrentSector.NavHaz := StrToIntSafe(S);
+    if (TWXServer.HipsSupported) then
+        FHips.SendSectorNavhaz(FCurrentSectorIndex, FCurrentSector.NavHaz);
   end
   else if (Copy(Line, 1, 10) = 'Mines   : ') then
   begin
@@ -678,6 +691,9 @@ begin
       NewPlanet := AllocMem(SizeOf(TPlanet));
       TWXDatabase.NULLPlanet(NewPlanet^);
       NewPlanet^.Name := Copy(Line, 11, length(Line) - 10);
+
+      if (TWXServer.HipsSupported) then
+        FHips.SendSectorPlanet(FCurrentSectorIndex, NewPlanet^.Name);
       FPlanetList.Add(NewPlanet);
     end
     else if (FSectorPosition = spTraders) then
@@ -693,6 +709,8 @@ begin
         NewTrader^.Name := FCurrentTrader.Name;
         NewTrader^.Figs := FCurrentTrader.Figs;
         FTraderList.Add(NewTrader);
+        if (TWXServer.HipsSupported) then
+          FHips.SendSectorTrader(FCurrentSectorIndex, NewTrader^);
       end
       else
       begin
@@ -714,6 +732,9 @@ begin
         NewShip^.Owner := FCurrentShip.Owner;
         NewShip^.Figs := FCurrentShip.Figs;
         NewShip^.ShipType := Copy(Line, 13, Pos(')', Line) - 13);
+
+        if (TWXServer.HipsSupported) then
+          FHips.SendSectorShip(FCurrentSectorIndex, NewShip^);
         FShipList.Add(NewShip);
       end
       else
