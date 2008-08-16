@@ -1,4 +1,5 @@
 #summary A guide for TWX Proxy developers
+#labels Featured
 
 = Setting up your development environment =
 
