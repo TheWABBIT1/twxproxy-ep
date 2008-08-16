@@ -3,7 +3,7 @@
 
 = Introduction =
 
-In order to retrieve meaningful data from a telnet application in an automated way, you need to parse its textual output made for humans.  Unfortunately, this approach, known as screen scraping, is highly brittle and time consuming for the client.  The "Hidden-in-Plain-Sight" or HIPS protocol seeks to define a way for a telnet server application to "hide" structured data within its human-readable textual output, and likewise, a telnet client application can use HIPS to send structured instructions or requests.
+In order to retrieve meaningful data from a telnet application in an automated way, the client need to parse the server's textual output made for humans.  Unfortunately, this approach, known as screen scraping, is highly brittle and time consuming for the client.  The "Hidden-in-Plain-Sight" or HIPS protocol seeks to define a way for a telnet server application to "hide" structured data within its human-readable textual output, and likewise, a telnet client application can use HIPS to send structured instructions or requests.
 
 = Details =
 
