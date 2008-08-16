@@ -3,7 +3,7 @@
 
 = Introduction =
 
-In order to retrieve meaningful data from a telnet application in an automated way, you need to parse its textual output made for humans.  Unfortunately, this approach, known as screen scraping, is highly brittle and time consuming for the client.  The "Hidden-in-Plain-Sight" or HIPS protocol seeks to define a way for a telnet application to "hide" structured data within its human-readable textual output. 
+In order to retrieve meaningful data from a telnet application in an automated way, you need to parse its textual output made for humans.  Unfortunately, this approach, known as screen scraping, is highly brittle and time consuming for the client.  The "Hidden-in-Plain-Sight" or HIPS protocol seeks to define a way for a telnet server application to "hide" structured data within its human-readable textual output, and likewise, a telnet client application can use HIPS to send structured instructions or requests.
 
 = Details =
 
@@ -24,7 +24,7 @@ Esc[8mlogin={"name":"John Doe"}Esc[28m
 }}}
 Which creates a message object in a hash map format with a single entry, "name", set to "John Doe".
 
-HIPS messages should be not be sent to the user's terminal, because HIPS interprets the conceal and reveal ANSI codes to mean nothing is displayed to the user.  Some terminals may show a blank space for every character, which will probably break the display.
+HIPS messages should be not be displayed in the user's terminal, because HIPS interprets the conceal and reveal ANSI codes to mean nothing is displayed to the user.  Some terminals may show a blank space for every character, which will probably break the visual display.
 
 {{{
 If the interpretation of the conceal and reveal codes is not feasible, a later version of this protocol may adopt a new set of ASCII escape codes out of the ones currently unused.
