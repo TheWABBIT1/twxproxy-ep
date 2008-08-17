@@ -81,7 +81,6 @@ var
   PersistenceManager: TPersistenceManager;
   MessageHandler: TMessageHandler;
   ProgramDir: string;
-  NoGui : Boolean;
 
 function ModuleFactory(Module: TModuleType): TTWXModule;
 var
@@ -120,7 +119,6 @@ var
   Switch: string;
   ModuleType: TModuleType;
   Port  : Integer;
-  NoStart : Boolean;
 begin
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;  // EP - Enables new mem-manager to report leaks if Debug=TRUE
   Randomize;
@@ -161,7 +159,8 @@ begin
   end;
 
   PersistenceManager.LoadStateValues;
-  TWXServer.ListenPort := Port;
+  if Port > 0 then
+    TWXServer.ListenPort := Port;
 end;
 
 procedure FinaliseProgram;
