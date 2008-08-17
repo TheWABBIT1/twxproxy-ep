@@ -81,6 +81,7 @@ var
   PersistenceManager: TPersistenceManager;
   MessageHandler: TMessageHandler;
   ProgramDir: string;
+  NoGui : Boolean;
 
 function ModuleFactory(Module: TModuleType): TTWXModule;
 var
@@ -118,6 +119,8 @@ var
   I     : Integer;
   Switch: string;
   ModuleType: TModuleType;
+  Port  : Integer;
+  NoStart : Boolean;
 begin
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;  // EP - Enables new mem-manager to report leaks if Debug=TRUE
   Randomize;
@@ -141,18 +144,24 @@ begin
 
   // call object constructors
   for ModuleType := Low(TModuleType) to High(TModuleType) do
+  begin
     ModuleFactory(ModuleType);
+  end;
 
-  PersistenceManager.LoadStateValues;
-
+  Port := 0;
   // check command line values
   for I := 1 to ParamCount do
   begin
     Switch := UpperCase(ParamStr(I));
 
     if (Copy(Switch, 1, 2) = '/P') and (Length(Switch) > 2) then
-      TWXServer.ListenPort := StrToIntSafe(Copy(Switch, 3, Length(Switch)));
+      Port := StrToIntSafe(Copy(Switch, 3, Length(Switch)))
+    else if Switch = '/NOGUI' then
+      TWXGui.NoGui := TRUE
   end;
+
+  PersistenceManager.LoadStateValues;
+  TWXServer.ListenPort := Port;
 end;
 
 procedure FinaliseProgram;
