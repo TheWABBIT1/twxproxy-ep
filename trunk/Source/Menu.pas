@@ -55,6 +55,7 @@ type
     MenuItemList   : TList;
     FHelpMode      : Boolean;
     FProgramDir    : string;
+    FSandboxGame   : string;
 
     // menu commands:
     procedure miBurst(ClientIndex : Byte);
@@ -166,6 +167,7 @@ type
     function GetMenuByName(MenuName : string) : TTWXMenuItem;
 
     property HelpMode : Boolean read FHelpMode write FHelpMode;
+    property SandboxGame : string read FSandboxGame write FSandboxGame;
 
   published
     property CurrentMenu : TTWXMenuItem read FCurrentMenu;
