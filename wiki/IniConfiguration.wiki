@@ -22,7 +22,7 @@ The INI file follows the established INI specification.  Each section maps inter
 || Reconnect || Whether to automatically reconnect after being disconnected or not ||  1 for true, 0 for false || 1 ||
 
 == TWXDatabase ==
-This section supports the creation of a database if no existing database file can be found.  The last database will be set as the active database.
+This section supports the creation of a database if no existing database file can be found.  
 
 || *Name* || *Description* || *Format* || *Default* ||
 || Description || The game description, used for the database name ||  Any valid file name || A ||
