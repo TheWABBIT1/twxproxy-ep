@@ -54,14 +54,21 @@ begin
 
   Head := GetBlankHeader;
   Head^.Description := Description;
-  Head^.Address := IniFile.ReadString('TWXDatabase','Server','localhost');
+  Head^.Address := IniFile.ReadString('TWXDatabase','Address','localhost');
   Head^.Sectors := IniFile.ReadInteger('TWXDatabase','Sectors', 5000);
   Head^.Port := IniFile.ReadInteger('TWXDatabase','Port',2003);
-  Head^.UseLogin := TRUE;
-  Head^.LoginName := IniFile.ReadString('TWXDatabase','LoginName','TestTrader');
-  Head^.Password := IniFile.ReadString('TWXDatabase','Server','TestTrader');
-  Head^.Game := Game;
-  Head^.LoginScript := IniFile.ReadString('TWXDatabase','Script','scripts\1_Login.ts');
+
+  if IniFile.ReadBool('TWXDatabase','UseLogin', FALSE) then
+  begin
+    Head^.UseLogin := TRUE;
+    Head^.LoginName := IniFile.ReadString('TWXDatabase','LoginName','TestTrader');
+    Head^.Password := IniFile.ReadString('TWXDatabase','Server','TestTrader');
+    Head^.Game := Game;
+    Head^.LoginScript := IniFile.ReadString('TWXDatabase','LoginScript','scripts\1_Login.ts');
+  end
+  else
+    Head^.UseLogin := FALSE;
+
 
   SetCurrentDir(ProgramDir);
   try
