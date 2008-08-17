@@ -58,7 +58,8 @@ uses
   GUI in 'GUI.pas',
   Observer in 'Observer.pas',
   Messages,
-  Hips in 'Hips.pas';
+  Hips in 'Hips.pas',
+  IniConfig in 'IniConfig.pas';
 
 {$R *.RES}
 
@@ -119,6 +120,7 @@ var
   Switch: string;
   ModuleType: TModuleType;
   Port  : Integer;
+  IniConfig : TIniConfig;
 begin
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;  // EP - Enables new mem-manager to report leaks if Debug=TRUE
   Randomize;
@@ -156,6 +158,11 @@ begin
       Port := StrToIntSafe(Copy(Switch, 3, Length(Switch)))
     else if Switch = '/NOGUI' then
       TWXGui.NoGui := TRUE
+    else
+    begin
+      IniConfig := TIniConfig.Create();
+      IniConfig.LoadConfig(ProgramDir, Switch);
+    end;
   end;
 
   PersistenceManager.LoadStateValues;
