@@ -52,6 +52,9 @@ type
     FConnected: Boolean;
     FFirstLoad: Boolean;
 
+    // If the gui is disabled (headless mode)
+    FNoGui: Boolean;
+
     function GetConnected: Boolean;
     procedure SetConnected(Value: Boolean);
     function GUIFormFactory(GUIFormType: TGUIFormType): TForm;
@@ -60,6 +63,8 @@ type
     procedure SetDatabaseName(const Value: string);
     function GetRecording: Boolean;
     procedure SetRecording(Value: Boolean);
+    function GetNoGui: Boolean;
+    procedure SetNoGui(Value: Boolean);
   protected
     { ITWXGlobals }
     function GetProgramDir: string;
@@ -80,6 +85,7 @@ type
     property ProgramDir: string read GetProgramDir write SetProgramDir;
     property DatabaseName: string read FDatabaseName write SetDatabaseName;
     property Recording: Boolean read GetRecording write SetRecording;
+    property NoGui: Boolean read GetNoGui write SetNoGui;
   published
     property FirstLoad: Boolean read FFirstLoad write FFirstLoad;
   end;
@@ -117,12 +123,14 @@ end;
 
 procedure TModGUI.ShowForm(FormType: TGUIFormType);
 begin
-  GUIForms[FormType].Show;
+  if not NoGui then
+    GUIForms[FormType].Show;
 end;
 
 procedure TModGUI.SetFormEnabled(FormType: TGUIFormType; Enabled: Boolean);
 begin
-  GUIForms[FormType].Enabled := Enabled;
+  if not NoGui then
+    GUIForms[FormType].Enabled := Enabled;
 end;
 
 function TModGUI.GetFormEnabled(FormType: TGUIFormType): Boolean;
@@ -132,7 +140,8 @@ end;
 
 procedure TModGUI.SetDatabaseName(const Value: string);
 begin
-  TfrmMain(GUIForms[gfMain]).DatabaseName := Value;
+  if not NoGui then
+    TfrmMain(GUIForms[gfMain]).DatabaseName := Value;
 end;
 
 function TModGUI.GetRecording: Boolean;
@@ -142,14 +151,26 @@ end;
 
 procedure TModGUI.SetRecording(Value: Boolean);
 begin
-  TfrmMain(GUIForms[gfMain]).miRecording.Checked := Value;
+  if not NoGui then
+    TfrmMain(GUIForms[gfMain]).miRecording.Checked := Value;
+end;
+
+function TModGUI.GetNoGui: Boolean;
+begin
+  Result := FNoGui;
+end;
+
+procedure TModGUI.SetNoGui(Value: Boolean);
+begin
+  FNoGui := Value;
 end;
 
 procedure TModGUI.ApplyNewReg(const NewUser, NewReg: string);
 begin
   // Apply new registration details to the setup form
-  
-  TfrmSetup(GUIForms[gfSetup]).ApplyNewReg(NewUser, NewReg);  
+
+  if not NoGui then
+    TfrmSetup(GUIForms[gfSetup]).ApplyNewReg(NewUser, NewReg);
 end;
 
 function TModGUI.GetConnected: Boolean;
@@ -159,23 +180,26 @@ end;
 
 procedure TModGUI.SetConnected(Value: Boolean);
 begin
-  if (Value <> FConnected) then
+  if not NoGui then
   begin
-    FConnected := Value;
-
-    with (TfrmMain(GUIForms[gfMain])) do
+    if (Value <> FConnected) then
     begin
-      if (FConnected) then
+      FConnected := Value;
+
+      with (TfrmMain(GUIForms[gfMain])) do
       begin
-        miConnect.Default := FALSE;
-        miLoad.Default := TRUE;
-        miConnect.Caption := 'Dis&connect';
-      end
-      else
-      begin
-        miConnect.Caption := '&Connect';
-        miConnect.Default := TRUE;
-        miLoad.Default := FALSE;
+        if (FConnected) then
+          begin
+          miConnect.Default := FALSE;
+          miLoad.Default := TRUE;
+          miConnect.Caption := 'Dis&connect';
+        end
+        else
+        begin
+          miConnect.Caption := '&Connect';
+          miConnect.Default := TRUE;
+          miLoad.Default := FALSE;
+        end;
       end;
     end;
   end;
@@ -183,33 +207,39 @@ end;
 
 procedure TModGUI.AddToHistory(HistoryType: THistoryType; const Value: string);
 begin
-  // add this stuff to the history form
-  TfrmHistory(GUIForms[gfHistory]).AddToHistory(HistoryType, Value);
+  if not NoGui then
+    // add this stuff to the history form
+    TfrmHistory(GUIForms[gfHistory]).AddToHistory(HistoryType, Value);
 end;
 
 procedure TModGUI.AddScriptMenu(Script: TScript);
 begin
-  TfrmMain(GUIForms[gfMain]).AddScriptMenu(Script);
+  if not NoGui then
+    TfrmMain(GUIForms[gfMain]).AddScriptMenu(Script);
 end;
 
 procedure TModGUI.RemoveScriptMenu(Script: TScript);
 begin
-  TfrmMain(GUIForms[gfMain]).RemoveScriptMenu(Script);
+  if not NoGui then
+    TfrmMain(GUIForms[gfMain]).RemoveScriptMenu(Script);
 end;
 
 procedure TModGUI.StateValuesLoaded;
 begin
-  // show main form
-  ShowForm(gfMain);
-
-  if (FirstLoad) then
+  if not NoGui then
   begin
-    // Give the user a welcome message
-    MessageDlg('Welcome to TWX Proxy!  Be warned that this' + endl + 'helper does not function as usual helpers do,' + endl + 'so it is strongly recommended that you read Readme.txt before' + endl + 'continuing.', mtInformation, [mbOk], 0);
-    MessageDlg('You will need to create a new database before connecting to a server', mtInformation, [mbOk], 0);
-    ShowForm(gfSetup);
-    ShowForm(gfLicense);
-    FirstLoad := False;
+    // show main form
+    ShowForm(gfMain);
+
+    if (FirstLoad) then
+    begin
+      // Give the user a welcome message
+      MessageDlg('Welcome to TWX Proxy!  Be warned that this' + endl + 'helper does not function as usual helpers do,' + endl + 'so it is strongly recommended that you read Readme.txt before' + endl + 'continuing.', mtInformation, [mbOk], 0);
+      MessageDlg('You will need to create a new database before connecting to a server', mtInformation, [mbOk], 0);
+      ShowForm(gfSetup);
+      ShowForm(gfLicense);
+      FirstLoad := False;
+    end;
   end;
 end;
 
