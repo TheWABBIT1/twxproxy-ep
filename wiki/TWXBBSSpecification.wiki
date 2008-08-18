@@ -1,0 +1,36 @@
+#summary Specification for TWX BBS
+#labels Phase-Design
+
+= Introduction =
+
+In order to make TradeWars more approachable, the game should be made accessible via the web in a more controller manner where everyone has access to the same scripts and user interface.  The TWX BBS project is for a slimmed down TradeWars helper that uses TWX Proxy on the server-side for data collection and script execution.  The main interface for TWX BBS will be a series of web pages.
+
+= Details =
+
+
+== Interaction diagram ==
+http://twxproxy-ep.googlecode.com/svn/trunk/twxbbs/spec/interactions.png
+
+Generated via http://www.websequencediagrams.com using the following code
+
+{{{
+Browser->TWXBBS: Visit BBS web site
+TWXBBS->Browser: Present login form
+Browser->TWXBBS: Submit user name and password
+TWXBBS->Browser: List of available games
+Browser->TWXBBS: Game A selected
+note right of TWXBBS: TWXBBS generates a one-time certificate for user and game A
+TWXBBS->Browser: Web page containing Applet configured with session certificate
+Browser->TWXBBS: Telnet over SSL request with session certificate
+note right of TWXBBS: Session certificate verified against local registry
+note right of TWXBBS: TWXBBS instantiates TWX Proxy instance for game A
+TWXBBS->TWXProxy: Sends connect command
+TWXProxy->TWGS: Connects to the server and runs the login script
+TWXBBS->Browser: Game presented to the user already started
+note right of Browser: Player plays game
+Browser->TWXBBS: Player quits game exiting to main TWGS menu
+note right of TWXBBS: TWXBBS detects the exit and shuts down
+TWXBBS->TWXProxy: Sends quit command
+note right of TWXBBS: Session certificate thrown away
+TWXBBS->Browser: Player returned to game list
+}}}
