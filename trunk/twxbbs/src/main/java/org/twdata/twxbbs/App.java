@@ -19,14 +19,11 @@
  */
 package org.twdata.twxbbs;
 
-import java.net.InetSocketAddress;
+import java.io.FileReader;
+import java.io.File;
 
-import org.apache.mina.common.*;
-import org.apache.mina.transport.socket.nio.SocketAcceptor;
-import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
-import org.apache.mina.filter.SSLFilter;
-import org.twdata.twxbbs.proxy.SessionSpecificIoHandler;
-import org.twdata.twxbbs.ssl.BogusSSLContextFactory;
+import org.twdata.twxbbs.proxy.ProxyManager;
+import org.twdata.twxbbs.web.WebManager;
 
 /**
  * (<b>Entry point</b>) Demonstrates how to write a very simple tunneling proxy 
@@ -48,35 +45,20 @@ public class App {
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             System.out.println(App.class.getName()
-                    + " <port>");
+                    + " <iniFilePath>");
             return;
         }
 
-        
+        File iniFile = new File(args[0]);
+        if (!iniFile.exists()) {
+            System.err.println("Cannot find INI file");
+            System.exit(1);
+        }
+        Container container = new Container(new FileReader(iniFile));
 
-        // Create TCP/IP acceptor.
-        IoAcceptor acceptor = new SocketAcceptor();
-        ((SocketAcceptorConfig) acceptor.getDefaultConfig())
-                .setReuseAddress(true);
-
-        SocketAcceptorConfig cfg = new SocketAcceptorConfig();
-        /*cfg.getFilterChain().addLast( "telnet", new ProtocolCodecFilter(new TelnetEncoder(), new TelnetDecoder()) {
-            @Override
-            public void sessionOpened(NextFilter nextFilter, IoSession session) throws Exception {
-                session.write(Telnet.START_INSTRUCTIONS);
-                super.sessionOpened(nextFilter, session);
-            }
-        });*/
-
-        // Start twxbbs.
-
-        SSLFilter sslFilter = new SSLFilter(BogusSSLContextFactory
-                .getInstance(true));
-        cfg.getFilterChain().addLast("sslFilter", sslFilter);
-        acceptor
-                .bind(new InetSocketAddress(Integer.parseInt(args[0])), new SessionSpecificIoHandler(host, port), cfg);
-
-        System.out.println("Listening on port " + Integer.parseInt(args[0]));
+        container.get(WebManager.class).start();
+        container.get(ProxyManager.class).start();
+        System.out.println("TWX BBS started");
     }
 
 }

@@ -20,11 +20,6 @@
             <version>1.1.7</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.mina</groupId>
-            <artifactId>mina-filter-ssl</artifactId>
-            <version>1.1.7</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.4.3</version>
@@ -35,12 +30,11 @@
             <version>6.1.9</version>
         </dependency>
         <dependency>
-            <groupId>com.google.code.guice</groupId>
-            <artifactId>guice</artifactId>
-            <version>1.0</version>
+            <groupId>org.ini4j</groupId>
+            <artifactId>ini4j</artifactId>
+            <version>0.3.2</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -55,6 +49,13 @@
                     </archive>
                 </configuration>
             </plugin>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                      <source>1.5</source>
+                      <target>1.5</target>
+                    </configuration>
+                </plugin>
 
         </plugins>
     </build>
