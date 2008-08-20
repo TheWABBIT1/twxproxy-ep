@@ -1,6 +1,7 @@
 package org.twdata.twxbbs.proxy;
 
-import java.security.KeyStore;
+import org.twdata.twxbbs.GameRegistration;
+import org.twdata.twxbbs.StartableManager;
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,10 +10,10 @@ import java.security.KeyStore;
  * Time: 21:42:08
  * To change this template use File | Settings | File Templates.
  */
-public interface ProxyManager {
+public interface ProxyManager extends StartableManager {
 
-    void register(KeyStore keyStore);
+    void registerClient(String sessionToken, GameRegistration reg);
 
-    void disconnect(String key);
+    void unregisterClient(String sessionToken);
 
 }
