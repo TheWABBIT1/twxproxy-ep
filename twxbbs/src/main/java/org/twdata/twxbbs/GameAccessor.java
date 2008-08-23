@@ -1,6 +1,7 @@
 package org.twdata.twxbbs;
 
 import java.util.Set;
+import java.util.Collection;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,7 +12,9 @@ import java.util.Set;
  */
 public interface GameAccessor {
 
-    Set<Game> getGames();
+    Collection<Game> getGames();
+
+    Game getGame(char id);
 
     Player getPlayer(String name);
 }

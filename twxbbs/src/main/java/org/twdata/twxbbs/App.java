@@ -21,6 +21,8 @@ package org.twdata.twxbbs;
 
 import java.io.FileReader;
 import java.io.File;
+import java.io.Reader;
+import java.io.InputStreamReader;
 
 import org.twdata.twxbbs.proxy.ProxyManager;
 import org.twdata.twxbbs.web.WebManager;
@@ -43,18 +45,20 @@ import org.twdata.twxbbs.web.WebManager;
 public class App {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            System.out.println(App.class.getName()
-                    + " <iniFilePath>");
-            return;
+
+        File baseDir = new File(".");
+        if (args[0] != null) {
+            baseDir = new File(args[0]);
         }
 
-        File iniFile = new File(args[0]);
+        Reader reader = null;
+        File iniFile = new File(baseDir, "twxbbs.ini");
         if (!iniFile.exists()) {
-            System.err.println("Cannot find INI file");
-            System.exit(1);
+            reader = new InputStreamReader(App.class.getClassLoader().getResourceAsStream("org/twdata/twxbbs/default.ini"));
+        } else {
+            reader = new FileReader(iniFile);
         }
-        Container container = new Container(new FileReader(iniFile));
+        Container container = new Container(reader);
 
         container.get(WebManager.class).start();
         container.get(ProxyManager.class).start();

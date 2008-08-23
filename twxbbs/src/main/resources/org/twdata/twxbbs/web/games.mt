@@ -19,7 +19,7 @@
 
     <!-- $BeginBlock game -->
         <tr>
-            <td>${id}</td>
+            <td><a href="/game/${id}">${id}</a></td>
             <td>${name}</td>
             <td>${sectors}</td>
         </tr>

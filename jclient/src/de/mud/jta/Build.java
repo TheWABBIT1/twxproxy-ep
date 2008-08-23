@@ -30,6 +30,6 @@ package de.mud.jta;
  */
 public class Build implements Version {
   public String getDate() {
-    return "20051219-0941";
+    return "20080824-1232";
   }
 }

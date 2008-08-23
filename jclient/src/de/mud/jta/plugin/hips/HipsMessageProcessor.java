@@ -3,9 +3,8 @@ package de.mud.jta.plugin.hips;
 import com.twolattes.json.Marshaller;
 
 import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.io.IOException;
@@ -23,83 +22,50 @@ import org.json.JSONException;
  * To change this template use File | Settings | File Templates.
  */
 public class HipsMessageProcessor {
-    private static final Pattern MESSAGE_PATTERN = Pattern.compile("[a-zA-Z][a-zA-Z0-9_]*\\.?[a-zA-Z][a-zA-Z0-9_]*=\\{.*\\}");
-    private final Map<String,Object> handlers;
+    public static final String DEFAULT_NAMESPACE = "_default_";
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("(?:([a-zA-Z][a-zA-Z0-9_]*)\\.)?([a-zA-Z][a-zA-Z0-9_]*)=(\\{.*\\})");
+    private final Map<String,List<HipsMessageListener>> handlers = new HashMap<String,List<HipsMessageListener>>();
+    private static final HipsMessageProcessor SELF = new HipsMessageProcessor();
 
-    public HipsMessageProcessor(final StatusPanel statusPanel) {
-        handlers = Collections.unmodifiableMap(new HashMap<String,Object>() {{
-            put("tw", new TwMessageHandler(statusPanel));
-        }});
+    private HipsMessageProcessor() {}
+
+    public static HipsMessageProcessor getInstance() {
+        return SELF;
+    }
+
+    public int getListenerCount() {
+        int count = 0;
+        for (List<HipsMessageListener> list : handlers.values()) {
+            count += list.size();
+        }
+        return count;
     }
 
     public void process(String message) {
 
         System.out.println("processing message "+message);
-        int equalsPos = message.indexOf('=');
-
-        String namespace = null;
-        String name = message.substring(0, equalsPos);
-        String json = message.substring(equalsPos+1);
-
-        int nsPos = name.indexOf('.');
-        if (nsPos > 0) {
-            namespace = name.substring(0, nsPos);
-            name = name.substring(nsPos+1);
-        }
-
-        Object handler = handlers.get(namespace);
-        if (handler == null) {
-            System.err.println("Invalid namespace: "+namespace+" in message "+message);
-            return;
-        }
-
-        String className = getClass().getPackage().getName()+"."+namespace+"."+Character.toUpperCase(name.charAt(0)) + name.substring(1);
-        Class messageCls;
-        try {
-
-            messageCls = getClass().getClassLoader().loadClass(className);
-        } catch (ClassNotFoundException e) {
-            System.err.println("Invalid message: "+className);
-            return;
-        }
-        Method method = null;
-        try {
-            method = getHandlerMethod(handler, messageCls);
-        } catch (NoSuchMethodException e) {
-            System.err.println("No such handler method for message class "+className+" on namespace "+namespace);
-            return;
-        }
-
-        Marshaller m = Marshaller.create(messageCls);
-
-        JSONObject obj;
-        try {
-
-            obj = new JSONObject(json);
-        } catch (JSONException e) {
-            System.err.println("Invalid json message: "+json);
-            return;
-        }
-        Object messageObj;
-        try {
-            messageObj = m.unmarshall(obj);
-        } catch (Exception ex) {
-            System.err.println("Unable to unmarshal: "+json);
-            return;
-        }
-        try {
-            method.invoke(handler, messageObj);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("We're all fucked", e);
-        } catch (InvocationTargetException e) {
-            System.err.println("Unable to execute handler");
-            e.printStackTrace(System.err);
+        Matcher m = MESSAGE_PATTERN.matcher(message);
+        if (m.matches()) {
+            String namespace = m.group(1) != null ? m.group(1) : DEFAULT_NAMESPACE;
+            String name = m.group(2);
+            String json = m.group(3);
+            List<HipsMessageListener> listeners = handlers.get(namespace);
+            if (listeners != null) {
+                for (HipsMessageListener listener : listeners) {
+                    listener.handle(name, json);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid message");
         }
     }
 
-    private Method getHandlerMethod(Object handler, Class messageCls) throws NoSuchMethodException {
-
-        Method m = handler.getClass().getMethod("handle", messageCls);
-        return m;
+    public void addListener(String namespace, HipsMessageListener listener) {
+        List<HipsMessageListener> listeners = handlers.get(namespace);
+        if (listeners == null) {
+            listeners = new ArrayList<HipsMessageListener>();
+            handlers.put(namespace, listeners);
+        }
+        listeners.add(listener);
     }
 }
