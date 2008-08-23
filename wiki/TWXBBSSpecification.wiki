@@ -35,9 +35,9 @@ Manages the TWX Proxy instances and dispatches client connects to the correct TW
 
 The game client is a web page consisting of HTML and CSS for the layout, JavaScript for buttons and UI operations, and a minimal applet for the telnet client.  HIPS will be the message bus to handle communication between TWX Proxy on the server and the JavaScript in the client.  Hips will be used to send data from TWX Proxy to the JavaScript and the JavaScript will use HIPS to send commands to TWX Proxy like script execution or data retrieval.
 
-This is a very early mockup of a possible game client layout:
+This are very early mockups of a possible game client layout:
 
-http://twxproxy-ep.googlecode.com/svn/trunk/twxbbs/spec/tw-cockpit-mockup.png
+http://twxproxy-ep.googlecode.com/svn/trunk/twxbbs/spec/tw-cockpit-mockup.png http://twxproxy-ep.googlecode.com/svn/trunk/twxbbs/spec/twx-bbs-play.png
 
 Notice the bulk of the interface is not the telnet applet, but rather helper status readouts, contextual and global command buttons, visual sector display, and the chat pane.  HTML, CSS, and JavaScript are used to make the client very skinnable and approachable by non-Java developers.
 
