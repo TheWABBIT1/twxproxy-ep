@@ -8,7 +8,6 @@ package org.twdata.twxbbs;
  * To change this template use File | Settings | File Templates.
  */
 public interface GameRegistration {
-    String getUsername();
-    String getPassword();
+    Player getPlayer();
     Game getGame();
 }

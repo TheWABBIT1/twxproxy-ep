@@ -28,11 +28,12 @@
     <fileset dir="lib">
       <include name="**/*.jar"/>
     </fileset>
+    <pathelement location="${java.home}/lib/plugin.jar"/>
   </path>
 
   <target name="init">
-    <property name="name" value="jta"/>
-    <property name="version" value="26"/>
+    <property name="name" value="jclient"/>
+    <property name="version" value="1.0-dev"/>
     <property name="target.dir" value="jar"/>
     <property name="debug" value="true"/>
     <tstamp>
@@ -44,17 +45,17 @@
 
   <target name="all" depends="build,doc,bin-jar,src-jar"/>
 
-  <target name="dist" depends="clean,version,all" description="builds a distribution"/>
+  <target name="dist" depends="clean,init,version,all" description="builds a distribution"/>
 
   <target name="build" depends="init,compile" description="build binaries"/>
 
   <target name="version" depends="init">
     <filter token="date" value="${BUILD}"/>
-    <delete file="de/mud/jta/Build.java"/>
-    <copy file="de/mud/jta/Build.java.tmpl" tofile="de/mud/jta/Build.java" filtering="true"/>
+    <delete file="src/de/mud/jta/Build.java"/>
+    <copy file="src/de/mud/jta/Build.java.tmpl" tofile="src/de/mud/jta/Build.java" filtering="true"/>
   </target>
 
-  <target name="compile">
+  <target name="compile" depends="init">
     <javac srcdir="src" includes="de/mud/**" excludes="de/mud/flash/**" debug="${debug}" destdir="build"
         classpathref="cp" />
     <copy todir="build">
@@ -74,11 +75,11 @@
     </javac>
   </target>
 
-  <target name="clean" depends="init" description="clean up">
+  <target name="clean" description="clean up">
     <delete>
       <fileset dir="." includes="doc/source/**"/>
     </delete>
-    <delete dir="${name}${version}"/>
+    <delete dir="${name}-${version}"/>
     <delete dir="build"/>
     <delete dir="${target.dir}"/>
   </target>
@@ -88,15 +89,15 @@
       author="true"
       version="true"
       use="true"
-      windowtitle="JTA - Telnet/SSH for the JAVA(tm) platform (${name}${version})"/>
+      windowtitle="JTA - Telnet/SSH for the JAVA(tm) platform (${name}-${version})"/>
   </target>
 
   <target name="run" depends="bin-jar" description="Runs the app">
-    <java jar="${target.dir}/${name}${version}.jar" fork="true"/>
+    <java jar="${target.dir}/${name}-${version}.jar" fork="true"/>
   </target>
 
   <target name="bin-jar" depends="init,build" description="package binaries">
-    <jar jarfile="${target.dir}/${name}${version}.jar"
+    <jar jarfile="${target.dir}/${name}-${version}.jar"
       manifest="jta.manifest">
       <fileset dir="build"/>
       <fileset dir="." includes="license/**" excludes="license/CVS"/>
@@ -104,9 +105,9 @@
   </target>
 
   <target name="src-jar" depends="init,clean" description="package the sources">
-    <mkdir dir="${name}${version}"/>
+    <mkdir dir="${name}-${version}"/>
     <!-- copy sources -->
-    <copy todir="${name}${version}">
+    <copy todir="${name}-${version}">
       <fileset dir="src">
         <exclude name="**/*.class"/>
         <exclude name="**/CVS"/>
@@ -114,15 +115,15 @@
         <exclude name="jar/**"/>
         <exclude name="tmp/**"/>
         <exclude name="bin/dist.sh"/>
-        <exclude name="${name}${version}"/>
+        <exclude name="${name}-${version}"/>
       </fileset>
     </copy>
     <!-- copy changes, ignore errors -->
     <exec executable="rcs2log" failonerror="false" 
-          output="${name}${version}/CHANGES"/>
+          output="${name}-${version}/CHANGES"/>
     <!-- package sources -->
-    <jar basedir="src" includes="${name}${version}/**" jarfile="${target.dir}/jta${version}-src.jar"/>
-    <delete dir="${name}${version}"/>
+    <jar basedir="src" includes="${name}-${version}/**" jarfile="${target.dir}/jta-${version}-src.jar"/>
+    <delete dir="${name}-${version}"/>
   </target>
 
 

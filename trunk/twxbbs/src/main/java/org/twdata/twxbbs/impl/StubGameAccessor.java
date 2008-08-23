@@ -4,10 +4,7 @@ import org.twdata.twxbbs.GameAccessor;
 import org.twdata.twxbbs.Game;
 import org.twdata.twxbbs.Player;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,10 +15,10 @@ import java.util.HashMap;
  */
 public class StubGameAccessor implements GameAccessor {
 
-    private final Set<Game> games = new HashSet<Game>() {{
-        add(new DefaultGame('A', "The first great game", 5000));
-        add(new DefaultGame('B', "The second ok game", 10000));
-        add(new DefaultGame('C', "The third shit game", 20000));
+    private final Map<Character,Game> games = new HashMap<Character,Game>() {{
+        put('A',new DefaultGame('A', "The first great game", 5000));
+        put('B',new DefaultGame('B', "The second ok game", 10000));
+        put('C',new DefaultGame('C', "The third shit game", 20000));
     }};
 
     private final Map<String,Player> players = new HashMap<String,Player>() {{
@@ -29,8 +26,12 @@ public class StubGameAccessor implements GameAccessor {
         put("killer", new DefaultPlayer("killer", "bob"));
         put("sarah", new DefaultPlayer("sarah", "sarah"));
     }};
-    public Set<Game> getGames() {
-        return games;
+    public Collection<Game> getGames() {
+        return games.values();
+    }
+
+    public Game getGame(char id) {
+        return games.get(id);
     }
 
     public Player getPlayer(String name) {

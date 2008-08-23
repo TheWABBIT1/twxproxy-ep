@@ -25,10 +25,7 @@
 
 package de.mud.jta.plugin;
 
-import de.mud.jta.Plugin;
-import de.mud.jta.PluginBus;
-import de.mud.jta.PluginConfig;
-import de.mud.jta.VisualPlugin;
+import de.mud.jta.*;
 import de.mud.jta.event.ConfigurationListener;
 import de.mud.jta.event.OnlineStatusListener;
 import de.mud.jta.event.SocketListener;
@@ -125,6 +122,7 @@ public class Status extends Plugin implements VisualPlugin, Runnable {
     ports.put("25", "smtp");
 
     sPanel = new JPanel(new BorderLayout());
+      sPanel.add("South", new JLabel("Build: "+new Build().getDate()));
 
     host = new JLabel("Not connected.", JLabel.LEFT);
 

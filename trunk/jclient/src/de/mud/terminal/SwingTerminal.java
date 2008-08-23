@@ -523,6 +523,8 @@ public class SwingTerminal extends Component
       Dimension size = super.getSize();
       backingStore = createImage(size.width, size.height);
       buffer.update[0] = true;
+      backingStore.getGraphics().setColor(getBackground());
+      backingStore.getGraphics().fillRect(0, 0, size.width, size.height);
       redraw();
     }
 

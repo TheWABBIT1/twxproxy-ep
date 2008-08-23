@@ -30,10 +30,10 @@ import de.mud.jta.event.OnlineStatusListener;
 import de.mud.jta.event.ReturnFocusRequest;
 import de.mud.jta.event.SocketRequest;
 import de.mud.jta.event.SoundListener;
+import de.mud.jta.plugin.hips.HipsMessageProcessor;
+import de.mud.jta.plugin.hips.HipsMessageListener;
 
-import javax.swing.JApplet;
-import javax.swing.JFrame;
-import javax.swing.RootPaneContainer;
+import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Component;
@@ -56,6 +56,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
+
+import netscape.javascript.JSObject;
 
 /**
  * <B>JTA - Telnet/SSH for the JAVA(tm) platform: Applet</B><P>
@@ -106,6 +108,13 @@ public class Applet extends JApplet {
    * do initializations for the plugins and the applet.
    */
   public void init() {
+      try {
+          UIManager.setLookAndFeel( new com.nilo.plaf.nimrod.NimRODLookAndFeel());
+      } catch (UnsupportedLookAndFeelException e) {
+          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+      }
+      System.out.println("Starting applet " + toString());
+      new Exception().printStackTrace();
     if (debug > 0) System.err.println("Applet: init()");
     if (pluginLoader == null) {
       try {
@@ -466,6 +475,7 @@ public class Applet extends JApplet {
 
 
     }
+      System.out.println("====Finished init");
   }
 
   /**
@@ -480,6 +490,12 @@ public class Applet extends JApplet {
     }
   }
 
+    public void destroy() {
+           System.out.println("Destroying applet");
+            new Exception().printStackTrace();
+        }
+
+
   /**
    * Stop the applet and disconnect.
    */
@@ -488,6 +504,22 @@ public class Applet extends JApplet {
       if (debug > 0) System.err.println("stop()");
       pluginLoader.broadcast(new SocketRequest());
     }
+      System.out.println("Stopping applet");
+  }
+
+  public void addHipsMessageListener(final String ns, final String methodName) {
+      System.out.println("Registering method "+methodName+" for namespace "+ns);
+      HipsMessageProcessor.getInstance().addListener(ns, new HipsMessageListener() {
+          public void handle(String name, String message) {
+              System.out.println("Handling message "+message+" for applet: "+Applet.this.toString());
+              JSObject win = JSObject.getWindow(Applet.this);
+              win.call(methodName, new Object[]{name, message});
+          }
+      });
+  }
+
+  public int getHipsListenerCount() {
+      return HipsMessageProcessor.getInstance().getListenerCount();
   }
 
   /**

@@ -37,7 +37,6 @@ public class Hips extends Plugin
 
     private FilterPlugin source;
     private boolean inHips;
-    private StatusPanel statusPanel;
 
     /**
      * Create a new plugin and set the plugin bus used by this plugin and
@@ -53,18 +52,18 @@ public class Hips extends Plugin
             public void online() {
                 // AYT
                 try {
+                    System.out.println("Sending AYT");
+                    source.write(new byte[]{(byte) 255, (byte) 253, (byte) 246});
                     source.write(new byte[]{(byte) 255, (byte) 246});
                 } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 }
             }
-
             public void offline() {
             }
         });
 
-        statusPanel = new StatusPanel();
-        hipsMessageProcessor = new HipsMessageProcessor(statusPanel);
+        hipsMessageProcessor = HipsMessageProcessor.getInstance();
 
     }
 
@@ -86,7 +85,7 @@ public class Hips extends Plugin
     }
 
     public JComponent getPluginVisual() {
-        return statusPanel;
+        return null;
     }
 
     public JMenu getPluginMenu() {
@@ -98,7 +97,7 @@ public class Hips extends Plugin
             byte b = barr[x];
 
             if (Hips.TELNET_WILL_HIPS[willHipsPos] == b) {
-                //System.out.println("will hips pos " + willHipsPos);
+                System.out.println("will hips pos " + willHipsPos);
                 willHipsPos++;
                 if (Hips.TELNET_WILL_HIPS.length == willHipsPos) {
                     source.write(Hips.TELNET_DO_HIPS);
@@ -109,7 +108,6 @@ public class Hips extends Plugin
                 willHipsPos = 0;
             }
 
-            //System.out.println("In hips: "+inHips+" concealPos:"+concealPos+" revealPos:"+revealPos);
             if (!inHips) {
                 if (Hips.ANSI_CONCEAL[concealPos] == b) {
                     concealPos++;

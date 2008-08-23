@@ -2,9 +2,11 @@ package org.twdata.twxbbs;
 
 import org.twdata.twxbbs.impl.StubGameAccessor;
 import org.twdata.twxbbs.web.template.MiniTemplatorCache;
+import org.twdata.twxbbs.web.template.TemplateGenerator;
 import org.twdata.twxbbs.web.GameListServlet;
 import org.twdata.twxbbs.web.WebManager;
 import org.twdata.twxbbs.web.JettyWebManager;
+import org.twdata.twxbbs.web.GameClientServlet;
 import org.twdata.twxbbs.proxy.ProxyManager;
 import org.twdata.twxbbs.proxy.DefaultProxyManager;
 import org.ini4j.Ini;
@@ -34,8 +36,7 @@ public class Container {
 
         objects.put(GameAccessor.class, new StubGameAccessor());
         objects.put(MiniTemplatorCache.class, new MiniTemplatorCache());
-        objects.put(GameListServlet.class, new GameListServlet(
-                get(GameAccessor.class),
+        objects.put(TemplateGenerator.class, new TemplateGenerator(
                 get(MiniTemplatorCache.class)
         ));
         objects.put(ProxyManager.class, new DefaultProxyManager(
@@ -43,10 +44,21 @@ public class Container {
                 proxyConfig.fetch("TWGSHost"),
                 getConfigInt(proxyConfig, "TWGSPort", 2002)
         ));
+        objects.put(GameListServlet.class, new GameListServlet(
+                get(GameAccessor.class),
+                get(TemplateGenerator.class)
+        ));
+        objects.put(GameClientServlet.class, new GameClientServlet(
+                get(GameAccessor.class),
+                get(ProxyManager.class),
+                get(TemplateGenerator.class)
+        ));
+
         objects.put(WebManager.class, new JettyWebManager(
                 getConfigInt(webConfig, "Port", 8080),
                 new HashMap<String, Servlet>() {{
                     put("/games", Container.this.get(GameListServlet.class));
+                    put("/game/*", Container.this.get(GameClientServlet.class));
                 }}
         ));
     }
