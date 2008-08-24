@@ -516,11 +516,7 @@ public class Applet extends JApplet {
           public void handle(String name, String message) {
               System.out.println("Handling message "+message+" for applet: "+Applet.this.toString());
               JSObject win = JSObject.getWindow(Applet.this);
-              if (win != null) {
-                win.call(methodName, new Object[]{name, message});
-              } else {
-                System.err.println("LiveConnect not supported on this platform");
-              }
+              win.call(methodName, new Object[]{name, message});
           }
       });
   }

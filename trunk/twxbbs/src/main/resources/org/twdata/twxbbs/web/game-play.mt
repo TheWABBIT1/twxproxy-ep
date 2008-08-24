@@ -62,6 +62,7 @@
   <param name="session" value="${session}" />
   <param name="proxyHost" value="${proxyHost}" />
   <param name="proxyPort" value="${proxyPort}" />
+  <param name="mayscript" value="true" />
   <center>
     <p><strong>TWX BBS content requires Java 1.5 or higher, which your browser does not appear to have.</strong></p>
 
@@ -78,6 +79,7 @@
   <param name="archive" value="/jclient-1.0-dev.jar" />
   <param name="persistState" value="false" />
   <param name="cache_option" value="No">
+  <param name="mayscript" value="true" />
   <center>
     <p><strong>TWX BBS client requires Java 1.5 or higher, which your browser does not appear to have.</strong></p>
     <p><a href="http://www.java.com/en/download/index.jsp">Get the latest Java Plug-in.</a></p>
