@@ -3,12 +3,13 @@ package org.twdata.twxbbs;
 import org.twdata.twxbbs.impl.StubGameAccessor;
 import org.twdata.twxbbs.web.template.MiniTemplatorCache;
 import org.twdata.twxbbs.web.template.TemplateGenerator;
-import org.twdata.twxbbs.web.GameListServlet;
-import org.twdata.twxbbs.web.WebManager;
-import org.twdata.twxbbs.web.JettyWebManager;
-import org.twdata.twxbbs.web.GameClientServlet;
+import org.twdata.twxbbs.web.*;
 import org.twdata.twxbbs.proxy.ProxyManager;
 import org.twdata.twxbbs.proxy.DefaultProxyManager;
+import org.twdata.twxbbs.config.impl.IniConfiguration;
+import org.twdata.twxbbs.config.Configuration;
+import org.twdata.twxbbs.event.EventManager;
+import org.twdata.twxbbs.event.impl.DefaultEventManager;
 import org.ini4j.Ini;
 
 import javax.servlet.Servlet;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.io.FileReader;
 import java.io.Reader;
 import java.io.IOException;
+import java.io.File;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,21 +30,21 @@ import java.io.IOException;
 public class Container {
     private Map<Class<?>,Object> objects = new HashMap<Class<?>,Object>();
 
-    Container(Reader iniReader) throws IOException {
+    Container(File baseDir) throws IOException {
 
-        Ini config = new Ini(iniReader);
-        Ini.Section proxyConfig = config.get("Proxy");
-        Ini.Section webConfig = config.get("Web");
+
+        objects.put(EventManager.class, new DefaultEventManager());
+        objects.put(Configuration.class, new IniConfiguration(
+                baseDir,
+                get(EventManager.class)
+        ));
 
         objects.put(GameAccessor.class, new StubGameAccessor());
-        objects.put(MiniTemplatorCache.class, new MiniTemplatorCache());
         objects.put(TemplateGenerator.class, new TemplateGenerator(
-                get(MiniTemplatorCache.class)
+                get(EventManager.class)
         ));
         objects.put(ProxyManager.class, new DefaultProxyManager(
-                getConfigInt(proxyConfig, "Port", 8023),
-                proxyConfig.fetch("TWGSHost"),
-                getConfigInt(proxyConfig, "TWGSPort", 2002)
+                get(EventManager.class)
         ));
         objects.put(GameListServlet.class, new GameListServlet(
                 get(GameAccessor.class),
@@ -51,16 +53,24 @@ public class Container {
         objects.put(GameClientServlet.class, new GameClientServlet(
                 get(GameAccessor.class),
                 get(ProxyManager.class),
+                get(TemplateGenerator.class),
+                get(Configuration.class)
+        ));
+        objects.put(ConfigurationServlet.class, new ConfigurationServlet(
+                get(Configuration.class),
                 get(TemplateGenerator.class)
         ));
 
         objects.put(WebManager.class, new JettyWebManager(
-                getConfigInt(webConfig, "Port", 8080),
+                get(EventManager.class),
+                get(TemplateGenerator.class),
                 new HashMap<String, Servlet>() {{
                     put("/games", Container.this.get(GameListServlet.class));
                     put("/game/*", Container.this.get(GameClientServlet.class));
                 }}
         ));
+
+        get(EventManager.class).broadcast(new ContainerInitializedEvent());
     }
 
     public <T> T get(Class<T> cls) {
@@ -79,5 +89,7 @@ public class Container {
             return Integer.parseInt(val);
         }
     }
+
+    public static class ContainerInitializedEvent {}
 
 }

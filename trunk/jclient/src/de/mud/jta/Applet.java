@@ -116,6 +116,9 @@ public class Applet extends JApplet {
       System.out.println("Starting applet " + toString());
       new Exception().printStackTrace();
     if (debug > 0) System.err.println("Applet: init()");
+
+    host = getParameter("proxyHost");
+    port = getParameter("proxyPort");
     if (pluginLoader == null) {
       try {
         options.load(Applet.class
@@ -178,12 +181,12 @@ public class Applet extends JApplet {
       pluginLoader = new Common(options);
 
       // set the host to our code base, no other hosts are allowed anyway
-      host = options.getProperty("Socket.host");
-      if (host == null)
-        host = getCodeBase().getHost();
-      port = options.getProperty("Socket.port");
-      if (port == null)
-        port = "23";
+      //host = options.getProperty("Socket.host");
+      //if (host == null)
+      //  host = getCodeBase().getHost();
+      //port = options.getProperty("Socket.port");
+      //if (port == null)
+      //  port = "23";
 
       if ((new Boolean(options.getProperty("Applet.connect"))
               .booleanValue()))

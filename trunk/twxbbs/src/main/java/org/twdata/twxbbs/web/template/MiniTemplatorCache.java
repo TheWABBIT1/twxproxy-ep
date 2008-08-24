@@ -1,8 +1,6 @@
 package org.twdata.twxbbs.web.template;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 
@@ -28,12 +26,13 @@ public class MiniTemplatorCache {
     private Charset charset;                      // charset used for file i/o
     private HashMap<String, MiniTemplator> cache;               // buffered MiniTemplator objects
     private final boolean disabled;
+    private final File templateDir;
 
     /**
      * Creates a new MiniTemplatorCache object.
      */
     public MiniTemplatorCache() {
-        this(Charset.defaultCharset());
+        this(Charset.defaultCharset(), null);
     }
 
     /**
@@ -41,8 +40,9 @@ public class MiniTemplatorCache {
      *
      * @param charset             the character set to be used for reading template files and writing output files.
      */
-    public MiniTemplatorCache(Charset charset) {
+    public MiniTemplatorCache(Charset charset, File templateDir) {
         this.charset = charset;
+        this.templateDir = templateDir;
         cache = new HashMap<String, MiniTemplator>();
         this.disabled = !Boolean.getBoolean("cache");
     }
@@ -66,18 +66,25 @@ public class MiniTemplatorCache {
         MiniTemplator mt = cache.get(templateFileName);
         if (mt == null) {
             InputStream in = null;
-            try {
+            if (templateDir != null) {
+                File template = new File(templateDir, templateFileName);
+                if (template.exists()) {
+                    in = new FileInputStream(template);
+                }
+            }
+            if (in == null) {
                 in = getClass().getClassLoader().getResourceAsStream("org/twdata/twxbbs/web/"+templateFileName);
                 if (in == null) {
                     throw new IllegalArgumentException("Template "+templateFileName+" not found");
                 }
+            }
+            try {
                 mt = new MiniTemplator(new InputStreamReader(in, charset));
                 if (!disabled) {
                     cache.put(templateFileName, mt);
                 }
             } finally {
-                if (in != null)
-                    in.close();
+                in.close();
             }
         }
 

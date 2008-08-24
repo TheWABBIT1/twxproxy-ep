@@ -4,6 +4,10 @@ import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.twdata.twxbbs.GameRegistration;
+import org.twdata.twxbbs.config.ConfigurationRefreshedEvent;
+import org.twdata.twxbbs.config.Configuration;
+import org.twdata.twxbbs.event.EventManager;
+import org.twdata.twxbbs.event.EventListener;
 
 import java.security.KeyStore;
 import java.net.InetSocketAddress;
@@ -18,26 +22,40 @@ import java.io.IOException;
  */
 public class DefaultProxyManager implements ProxyManager {
 
-    private final int proxyPort;
-    private final String targetHost;
-    private final int targetPort;
-    final IoAcceptor acceptor;
+    private int proxyPort;
+    private String targetHost;
+    private int targetPort;
+    IoAcceptor acceptor;
 
-    public DefaultProxyManager(int proxyPort, String targetHost, int targetPort) {
-        this.proxyPort = proxyPort;
-        this.targetHost = targetHost;
-        this.targetPort = targetPort;
+    public DefaultProxyManager(EventManager eventManager) {
+        eventManager.register(this);
 
+    }
+
+    @EventListener
+    public synchronized void refresh(ConfigurationRefreshedEvent event) throws IOException {
+        Configuration config = event.getConfiguration();
+        this.proxyPort = config.getProxyPort();
+        this.targetHost = config.getTwgsHost();
+        this.targetPort = config.getTwgsPort();
+
+        stop();
         acceptor = new SocketAcceptor();
         ((SocketAcceptorConfig) acceptor.getDefaultConfig())
                 .setReuseAddress(true);
+        start();
     }
 
-    public void start() throws IOException {
-        // Create TCP/IP acceptor.
-        SocketAcceptorConfig cfg = new SocketAcceptorConfig();
-        acceptor
-            .bind(new InetSocketAddress(proxyPort), new SessionSpecificIoHandler(targetHost, targetPort), cfg);
+    public synchronized void start() throws IOException {
+        if (acceptor != null) {
+            // Create TCP/IP acceptor.
+            SocketAcceptorConfig cfg = new SocketAcceptorConfig();
+            acceptor
+                .bind(new InetSocketAddress(proxyPort), new SessionSpecificIoHandler(targetHost, targetPort), cfg);
+        } else {
+            throw new IllegalStateException("Proxy server hasn't been configured yet");
+        }
+
     }
 
     public void registerClient(String sessionToken, GameRegistration reg) {
@@ -45,11 +63,13 @@ public class DefaultProxyManager implements ProxyManager {
     }
 
 
-    public void stop() {
-        acceptor.unbindAll();
+    public synchronized void stop() {
+        if (acceptor != null && hasStarted()) {
+            acceptor.unbindAll();
+        }
     }
 
-    public boolean hasStarted() {
+    public synchronized boolean hasStarted() {
         return acceptor.isManaged(new InetSocketAddress(proxyPort));
     }
 

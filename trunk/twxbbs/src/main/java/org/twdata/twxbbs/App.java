@@ -47,21 +47,12 @@ public class App {
     public static void main(String[] args) throws Exception {
 
         File baseDir = new File(".");
-        if (args[0] != null) {
+        if (args.length > 0 && args[0] != null) {
             baseDir = new File(args[0]);
         }
 
-        Reader reader = null;
-        File iniFile = new File(baseDir, "twxbbs.ini");
-        if (!iniFile.exists()) {
-            reader = new InputStreamReader(App.class.getClassLoader().getResourceAsStream("org/twdata/twxbbs/default.ini"));
-        } else {
-            reader = new FileReader(iniFile);
-        }
-        Container container = new Container(reader);
+        Container container = new Container(baseDir);
 
-        container.get(WebManager.class).start();
-        container.get(ProxyManager.class).start();
         System.out.println("TWX BBS started");
     }
 

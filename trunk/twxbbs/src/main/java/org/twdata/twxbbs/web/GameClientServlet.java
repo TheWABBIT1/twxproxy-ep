@@ -4,6 +4,7 @@ import org.twdata.twxbbs.GameAccessor;
 import org.twdata.twxbbs.Game;
 import org.twdata.twxbbs.Player;
 import org.twdata.twxbbs.GameRegistration;
+import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.proxy.ProxyManager;
 import org.twdata.twxbbs.impl.DefaultGameRegistration;
 import org.twdata.twxbbs.web.template.MiniTemplatorCache;
@@ -45,12 +46,14 @@ public class GameClientServlet extends HttpServlet {
         put("missing.fields", "All fields must be filled out");
         put("invalid.password", "The password is incorrect, please try again");
     }};
+    private final Configuration configuration;
 
 
-    public GameClientServlet(GameAccessor gameAccessor, ProxyManager proxy, TemplateGenerator generator) {
+    public GameClientServlet(GameAccessor gameAccessor, ProxyManager proxy, TemplateGenerator generator, Configuration config) {
         this.gameAccessor = gameAccessor;
         this.generator = generator;
         this.proxyManager = proxy;
+        this.configuration = config;
         this.random = new Random();
     }
 
@@ -109,6 +112,8 @@ public class GameClientServlet extends HttpServlet {
             public void initTemplate(MiniTemplator template) throws MiniTemplator.VariableNotDefinedException, MiniTemplator.BlockNotDefinedException {
                 template.setVariable("name", game.getName());
                 template.setVariable("session", token);
+                template.setVariable("proxyHost", configuration.getProxyHost());
+                template.setVariable("proxyPort", String.valueOf(configuration.getProxyPort()));
             }
         });
     }
