@@ -5,7 +5,6 @@ import de.mud.jta.Plugin;
 import de.mud.jta.PluginBus;
 import de.mud.jta.VisualPlugin;
 import de.mud.jta.plugin.hips.HipsMessageProcessor;
-import de.mud.jta.plugin.hips.StatusPanel;
 import de.mud.jta.event.OnlineStatusListener;
 
 import javax.swing.*;
