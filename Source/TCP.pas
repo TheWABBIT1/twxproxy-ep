@@ -511,6 +511,9 @@ begin
           TransmitOp(OP_WILL, 3);
           TransmitOp(OP_WILL, 0);
           TransmitOp(OP_WILL, 1);
+
+          // Ask to enable HIPS
+          TransmitOp(OP_WILL, 76);
         end
         else if (TNOp = OP_DO) then
         begin
@@ -520,6 +523,10 @@ begin
 
             if (S[I] = #200) then
               FClientEchoMarks[SktIndex] := TRUE;
+          end
+          else if (S[I] = #76) then
+          begin
+            TWXServer.SetHipsSupported(TRUE);
           end
           else
             TransmitOp(OP_WONT, Byte(S[I]));
