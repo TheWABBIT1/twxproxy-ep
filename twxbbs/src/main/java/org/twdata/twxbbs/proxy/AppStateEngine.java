@@ -35,7 +35,7 @@ public class AppStateEngine {
                 new ServerToProxyIoHandler(), connector, new InetSocketAddress(
                         host, port));
         SessionSpecificIoHandler.setHandlerForSession(session, handler);
-        handler.sessionCreated(session);
-        handler.sessionOpened(session);
+        //handler.sessionCreated(session);
+        //handler.sessionOpened(session);
     }
 }

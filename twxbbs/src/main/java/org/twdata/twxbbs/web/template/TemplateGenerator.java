@@ -1,13 +1,20 @@
 package org.twdata.twxbbs.web.template;
 
 import org.twdata.twxbbs.Game;
+import org.twdata.twxbbs.util.Validate;
+import org.twdata.twxbbs.config.ConfigurationRefreshedEvent;
+import org.twdata.twxbbs.config.Configuration;
+import org.twdata.twxbbs.event.EventManager;
+import org.twdata.twxbbs.event.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringWriter;
 import java.io.IOException;
+import java.io.File;
 import java.util.regex.Pattern;
+import java.nio.charset.Charset;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,14 +24,22 @@ import java.util.regex.Pattern;
  * To change this template use File | Settings | File Templates.
  */
 public class TemplateGenerator {
-    private final MiniTemplatorCache templateCache;
+    private MiniTemplatorCache templateCache;
     private static final Logger log = LoggerFactory.getLogger(TemplateGenerator.class);
 
-    public TemplateGenerator(MiniTemplatorCache templateCache) {
-        this.templateCache = templateCache;
+    public TemplateGenerator(EventManager eventManager) {
+        eventManager.register(this);
     }
 
-    public boolean render(String name, HttpServletResponse res, TemplateCallback callback) throws IOException {
+    @EventListener
+    public synchronized void refresh(ConfigurationRefreshedEvent event) {
+        Configuration config = event.getConfiguration();
+        File templateDir = new File(config.getBaseDir(), "templates");
+        this.templateCache = new MiniTemplatorCache(Charset.defaultCharset(), templateDir);
+    }
+
+    public synchronized boolean render(String name, HttpServletResponse res, TemplateCallback callback) throws IOException {
+        Validate.notNull(templateCache);
         MiniTemplator template;
         try {
             template = templateCache.get(name);

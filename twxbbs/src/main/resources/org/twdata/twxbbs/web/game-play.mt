@@ -60,6 +60,8 @@
   <param name="archive" value="/jclient-1.0-dev.jar" />
   <param name="persistState" value="false" />
   <param name="session" value="${session}" />
+  <param name="proxyHost" value="${proxyHost}" />
+  <param name="proxyPort" value="${proxyPort}" />
   <center>
     <p><strong>TWX BBS content requires Java 1.5 or higher, which your browser does not appear to have.</strong></p>
 
