@@ -53,4 +53,12 @@ public abstract class AbstractProxyIoHandler extends IoHandlerAdapter {
         rb.reset();
         //SessionLog.info(session, rb.getString(CHARSET.newDecoder()));
     }
+
+    public void sessionClosed(IoSession session) throws Exception {
+        if (session.getAttachment() != null) {
+            ((IoSession) session.getAttachment()).setAttachment(null);
+            ((IoSession) session.getAttachment()).close();
+            session.setAttachment(null);
+        }
+    }
 }

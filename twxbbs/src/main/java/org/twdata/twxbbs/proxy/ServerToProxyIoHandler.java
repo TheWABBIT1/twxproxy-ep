@@ -31,13 +31,4 @@ import org.apache.mina.common.IoSession;
  *
  */
 public class ServerToProxyIoHandler extends AbstractProxyIoHandler {
-
-    public void sessionClosed(IoSession session) throws Exception {
-        if (session.getAttachment() != null) {
-            ((IoSession) session.getAttachment()).close();
-            ((IoSession) session.getAttachment()).setAttachment(null);
-            session.setAttachment(null);
-
-        }
-    }
 }
