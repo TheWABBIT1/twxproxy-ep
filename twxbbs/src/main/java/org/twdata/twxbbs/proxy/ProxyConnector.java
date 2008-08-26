@@ -2,16 +2,15 @@ package org.twdata.twxbbs.proxy;
 
 import org.apache.mina.common.*;
 import org.apache.mina.transport.socket.nio.SocketConnector;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.twdata.twxbbs.telnet.TelnetDecoder;
-import org.twdata.twxbbs.telnet.TelnetEncoder;
-import org.twdata.twxbbs.telnet.Telnet;
-import org.twdata.twxbbs.script.ScriptRunner;
 import org.twdata.twxbbs.proxy.SessionSpecificIoHandler;
 import org.twdata.twxbbs.proxy.ClientToProxyIoHandler;
 import org.twdata.twxbbs.proxy.ServerToProxyIoHandler;
+import org.twdata.twxbbs.proxy.script.ScriptIoFilter;
+import org.twdata.twxbbs.proxy.script.ScriptLexer;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,9 +19,9 @@ import java.net.InetSocketAddress;
  * Time: 15:03:46
  * To change this template use File | Settings | File Templates.
  */
-public class AppStateEngine {
+public class ProxyConnector {
 
-    public static void proxyTo(IoSession session, String host, int port) throws Exception {
+    public void connect(IoSession session, String host, int port) throws Exception {
 
         // Create TCP/IP connector.
         IoConnector connector = new SocketConnector();
@@ -34,6 +33,7 @@ public class AppStateEngine {
         ClientToProxyIoHandler handler = new ClientToProxyIoHandler(
                 new ServerToProxyIoHandler(), connector, new InetSocketAddress(
                         host, port));
+
         SessionSpecificIoHandler.setHandlerForSession(session, handler);
         //handler.sessionCreated(session);
         //handler.sessionOpened(session);
