@@ -4,6 +4,7 @@ import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.twdata.twxbbs.GameRegistration;
+import org.twdata.twxbbs.proxy.script.ScriptIoFilter;
 import org.twdata.twxbbs.config.ConfigurationRefreshedEvent;
 import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.event.EventManager;
@@ -11,7 +12,11 @@ import org.twdata.twxbbs.event.EventListener;
 
 import java.security.KeyStore;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.io.IOException;
+import java.io.File;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,9 +31,13 @@ public class DefaultProxyManager implements ProxyManager {
     private String targetHost;
     private int targetPort;
     IoAcceptor acceptor;
+    private ProxyConnector connector;
+    private List<URL> scripts;
 
-    public DefaultProxyManager(EventManager eventManager) {
+    public DefaultProxyManager(EventManager eventManager, ProxyConnector connector) {
+        this.connector = connector;
         eventManager.register(this);
+        scripts = new ArrayList<URL>();
 
     }
 
@@ -38,6 +47,14 @@ public class DefaultProxyManager implements ProxyManager {
         this.proxyPort = config.getProxyPort();
         this.targetHost = config.getTwgsHost();
         this.targetPort = config.getTwgsPort();
+
+        scripts.clear();
+        File scriptsDir = new File(config.getBaseDir(), "scripts");
+        if (scriptsDir.exists()) {
+            for (File file : scriptsDir.listFiles()) {
+                scripts.add(file.toURI().toURL());
+            }
+        }
 
         stop();
         acceptor = new SocketAcceptor();
@@ -50,8 +67,9 @@ public class DefaultProxyManager implements ProxyManager {
         if (acceptor != null) {
             // Create TCP/IP acceptor.
             SocketAcceptorConfig cfg = new SocketAcceptorConfig();
+            cfg.getFilterChain().addFirst("scripts", new ScriptIoFilter(scripts));
             acceptor
-                .bind(new InetSocketAddress(proxyPort), new SessionSpecificIoHandler(targetHost, targetPort), cfg);
+                .bind(new InetSocketAddress(proxyPort), new SessionSpecificIoHandler(connector, targetHost, targetPort), cfg);
         } else {
             throw new IllegalStateException("Proxy server hasn't been configured yet");
         }

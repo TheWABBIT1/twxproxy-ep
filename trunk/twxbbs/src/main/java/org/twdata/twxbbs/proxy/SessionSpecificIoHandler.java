@@ -3,7 +3,7 @@ package org.twdata.twxbbs.proxy;
 import org.apache.mina.common.IoHandler;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.IdleStatus;
-import org.twdata.twxbbs.proxy.AppStateEngine;
+import org.twdata.twxbbs.proxy.ProxyConnector;
 
 /**
  * Delegates to the IoHandler defined for this session
@@ -12,14 +12,16 @@ public class SessionSpecificIoHandler implements IoHandler {
     private static final String IO_HANDLER_KEY = "ioHandler";
     private final String host;
     private final int port;
+    private final ProxyConnector connector;
 
-    public SessionSpecificIoHandler(String host, int port) {
+    public SessionSpecificIoHandler(ProxyConnector connector, String host, int port) {
         this.host = host;
         this.port = port;
+        this.connector = connector;
     }
 
     public void sessionCreated(IoSession session) throws Exception {
-        AppStateEngine.proxyTo(session, host, port);
+        connector.connect(session, host, port);
         getHandler(session).sessionCreated(session);
     }
 

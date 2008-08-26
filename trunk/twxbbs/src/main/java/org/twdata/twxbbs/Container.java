@@ -1,11 +1,11 @@
 package org.twdata.twxbbs;
 
 import org.twdata.twxbbs.impl.StubGameAccessor;
-import org.twdata.twxbbs.web.template.MiniTemplatorCache;
 import org.twdata.twxbbs.web.template.TemplateGenerator;
 import org.twdata.twxbbs.web.*;
 import org.twdata.twxbbs.proxy.ProxyManager;
 import org.twdata.twxbbs.proxy.DefaultProxyManager;
+import org.twdata.twxbbs.proxy.ProxyConnector;
 import org.twdata.twxbbs.config.impl.IniConfiguration;
 import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.event.EventManager;
@@ -15,8 +15,6 @@ import org.ini4j.Ini;
 import javax.servlet.Servlet;
 import java.util.Map;
 import java.util.HashMap;
-import java.io.FileReader;
-import java.io.Reader;
 import java.io.IOException;
 import java.io.File;
 
@@ -40,12 +38,13 @@ public class Container {
         ));
 
         objects.put(GameAccessor.class, new StubGameAccessor());
+        objects.put(ProxyConnector.class, new ProxyConnector());
         objects.put(TemplateGenerator.class, new TemplateGenerator(
                 get(EventManager.class)
         ));
         objects.put(ProxyManager.class, new DefaultProxyManager(
-                get(EventManager.class)
-        ));
+                get(EventManager.class),
+                get(ProxyConnector.class)));
         objects.put(GameListServlet.class, new GameListServlet(
                 get(GameAccessor.class),
                 get(TemplateGenerator.class)

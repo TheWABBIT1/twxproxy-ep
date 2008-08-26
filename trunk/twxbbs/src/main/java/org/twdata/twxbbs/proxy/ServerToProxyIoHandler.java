@@ -20,8 +20,6 @@
 package org.twdata.twxbbs.proxy;
 
 import org.twdata.twxbbs.proxy.AbstractProxyIoHandler;
-import org.twdata.twxbbs.proxy.AppStateEngine;
-import org.apache.mina.common.IoSession;
 
 /**
  * Handles the server to proxy part of the proxied connection.
