@@ -70,6 +70,7 @@ public class DefaultProxyManager implements ProxyManager {
             cfg.getFilterChain().addFirst("scripts", new ScriptIoFilter(scripts));
             acceptor
                 .bind(new InetSocketAddress(proxyPort), new SessionSpecificIoHandler(connector, targetHost, targetPort), cfg);
+            System.out.println("Proxy started on port "+proxyPort+" connecting to "+targetHost+":"+targetPort);
         } else {
             throw new IllegalStateException("Proxy server hasn't been configured yet");
         }

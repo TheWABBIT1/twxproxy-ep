@@ -1,10 +1,12 @@
 package org.twdata.twxbbs.proxy.script;
 
-import javax.script.*;
-import java.net.URL;
-import java.io.Reader;
-import java.io.InputStreamReader;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
 
 /**
  * Created by IntelliJ IDEA.
