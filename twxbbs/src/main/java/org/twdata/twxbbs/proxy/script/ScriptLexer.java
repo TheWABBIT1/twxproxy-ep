@@ -1,6 +1,7 @@
 package org.twdata.twxbbs.proxy.script;
 
 import org.apache.mina.common.ByteBuffer;
+import org.twdata.twxbbs.util.CircularFifoBuffer;
 
 import java.io.IOException;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.LinkedHashMap;
 public class ScriptLexer {
     private final Map<String,Trigger> activeTriggers;
     private final StringBuffer currentLine;
-    private ByteBuffer backBuffer;
+    private CircularFifoBuffer backBuffer;
     private boolean waiting;
     private Match lastMatch;
     private long timeout = 1000 * 60;
@@ -24,7 +25,7 @@ public class ScriptLexer {
     public ScriptLexer() {
         activeTriggers = new LinkedHashMap<String,Trigger>();
         currentLine = new StringBuffer();
-        backBuffer = ByteBuffer.allocate(1024);
+        backBuffer = new CircularFifoBuffer(1024);
     }
 
     public synchronized void addTextTrigger(String id, String text) {
@@ -50,23 +51,12 @@ public class ScriptLexer {
         waiting = true;
         lastMatch = null;
         if (backBuffer.hasRemaining()) {
-            backBuffer.flip();
             parse(backBuffer);
-            backBuffer.compact();
-            if (lastMatch == null) {
-                wait(timeout);
-            }
+        }
+        if (lastMatch == null) {
+            wait(timeout);
         }
         return lastMatch;
-    }
-
-    private void expandBackBufferAsNeeded() {
-        if (backBuffer.position() == backBuffer.limit() - 1) {
-            ByteBuffer newBuf = ByteBuffer.allocate(backBuffer.capacity() * 3/2);
-            backBuffer.flip();
-            newBuf.put(backBuffer);
-            backBuffer = newBuf;
-        }
     }
 
     public synchronized void parse(ByteBuffer buffer) throws IOException {
@@ -77,7 +67,6 @@ public class ScriptLexer {
             }
             byte b = buffer.get();
             if (!waiting) {
-                expandBackBufferAsNeeded();
                 backBuffer.put(b);
             } else {
                 char c = (char) b;
@@ -151,7 +140,8 @@ public class ScriptLexer {
                             return true;
                         }
                     }
-
+                } else {
+                    pos = 0;
                 }
             } else {
                 if ('\r' == c) {
