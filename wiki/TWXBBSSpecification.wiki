@@ -15,7 +15,7 @@ The TWX BBS will consist of the following logical modules:
 
 == Web Interface ==
 
-The web interface will allow be the public face of the TWX BBS.  It will consist minimally of the following screens:
+The web interface will be the public face of the TWX BBS.  It will consist minimally of the following screens:
   # Game list
   # Game detail
   # Login/Signup
