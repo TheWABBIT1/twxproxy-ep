@@ -3,7 +3,7 @@
 
 = Introduction =
 
-In order to make TradeWars more approachable, the game should be made accessible via the web in a more controller manner where everyone has access to the same scripts and user interface.  The TWX BBS project is for a slimmed down TradeWars helper that uses TWX Proxy on the server-side for data collection and script execution.  The main interface for TWX BBS will be a series of web pages.
+In order to make TradeWars more approachable, the game should be made accessible via the web in a more controlled manner where everyone has access to the same scripts and user interface.  The TWX BBS project is for a slimmed down TradeWars helper that uses TWX Proxy on the server-side for data collection and script execution.  The main interface for TWX BBS will be a series of web pages.
 
 = Details =
 
