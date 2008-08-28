@@ -11,6 +11,7 @@ import org.twdata.twxbbs.config.ConfigurationRefreshedEvent;
 import org.twdata.twxbbs.event.EventListener;
 import org.twdata.twxbbs.event.EventManager;
 import org.twdata.twxbbs.web.template.TemplateGenerator;
+import org.twdata.twxbbs.Container;
 
 import javax.servlet.Servlet;
 import java.io.IOException;
@@ -93,6 +94,11 @@ public class JettyWebManager implements WebManager {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    @EventListener
+    public void shutdown(Container.ContainerStoppedEvent event) {
+        stop();
     }
 
     public boolean hasStarted() {

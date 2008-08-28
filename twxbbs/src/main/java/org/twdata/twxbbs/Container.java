@@ -89,6 +89,11 @@ public class Container {
         }
     }
 
+    public void stop() {
+        get(EventManager.class).broadcast(new ContainerStoppedEvent());
+    }
+
     public static class ContainerInitializedEvent {}
+    public static class ContainerStoppedEvent {}
 
 }
