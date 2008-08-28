@@ -4,6 +4,7 @@ import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.twdata.twxbbs.GameRegistration;
+import org.twdata.twxbbs.Container;
 import org.twdata.twxbbs.proxy.script.ScriptIoFilter;
 import org.twdata.twxbbs.config.ConfigurationRefreshedEvent;
 import org.twdata.twxbbs.config.Configuration;
@@ -75,6 +76,11 @@ public class DefaultProxyManager implements ProxyManager {
             throw new IllegalStateException("Proxy server hasn't been configured yet");
         }
 
+    }
+
+    @EventListener
+    public void shutdown(Container.ContainerStoppedEvent event) {
+        stop();
     }
 
     public void registerClient(String sessionToken, GameRegistration reg) {
