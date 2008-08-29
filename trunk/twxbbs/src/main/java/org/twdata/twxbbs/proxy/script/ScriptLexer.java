@@ -16,26 +16,56 @@ import java.util.LinkedHashMap;
  */
 public class ScriptLexer {
     private final Map<String,Trigger> activeTriggers;
+
+    // The current line
     private final StringBuffer currentLine;
-    private CircularFifoBuffer backBuffer;
+
+    // Contains text that isn't being actively matched, but may
+    private final CircularFifoBuffer backBuffer;
+
+    // Contains captured text
+    private final StringBuffer captureBuffer;
+
+    // Buffer for read data that may be used to create a modified write buffer if a capturing trigger is used
+    private final ByteBuffer readCopyBuffer;
+
+    // Whether we are waiting for triggers to be matched or not
     private boolean waiting;
+
+    // The last match a trigger matched
     private Match lastMatch;
+
+    // The timeout for waiting for a match
     private long timeout = 1000 * 60;
 
     public ScriptLexer() {
         activeTriggers = new LinkedHashMap<String,Trigger>();
         currentLine = new StringBuffer();
         backBuffer = new CircularFifoBuffer(1024);
+        captureBuffer = new StringBuffer();
+        readCopyBuffer = ByteBuffer.allocate(1024);
+        readCopyBuffer.setAutoExpand(true);
+
     }
 
     public synchronized void addTextTrigger(String id, String text) {
         if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
-        activeTriggers.put(id, new Trigger(id, text, false));
+        activeTriggers.put(id, new DefaultTrigger(id, text, false));
     }
 
     public synchronized void addTextLineTrigger(String id, String text) {
         if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
-        activeTriggers.put(id, new Trigger(id, text, true));
+        activeTriggers.put(id, new DefaultTrigger(id, text, true));
+    }
+
+    public synchronized void addCapturingTextTrigger(String id, String text) {
+        if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+        activeTriggers.put(id, new CapturingTrigger(id, text, false));
+    }
+
+    public synchronized void addCapturingTextLineTrigger(String id, String text) {
+        if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+        activeTriggers.put(id, new CapturingTrigger(id, text, true));
     }
 
     public synchronized void removeTextTrigger(String id) {
@@ -48,45 +78,97 @@ public class ScriptLexer {
     }
 
     public synchronized Match waitForTriggers() throws IOException, InterruptedException {
-        waiting = true;
-        lastMatch = null;
-        if (backBuffer.hasRemaining()) {
-            parse(backBuffer);
-        }
-        if (lastMatch == null) {
-            wait(timeout);
+        try {
+            waiting = true;
+            lastMatch = null;
+            if (backBuffer.hasRemaining()) {
+                parse(backBuffer);
+            }
+            if (lastMatch == null) {
+                wait(timeout);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return lastMatch;
     }
 
-    public synchronized void parse(ByteBuffer buffer) throws IOException {
+    public synchronized ByteBuffer parse(ByteBuffer buffer) throws IOException {
+        readCopyBuffer.clear();
 
+        int bytesRead = 0;
         while (buffer.hasRemaining()) {
             if (!waiting && buffer == backBuffer) {
-                return;
+                return buffer;
             }
             byte b = buffer.get();
+            bytesRead++;
+
             if (!waiting) {
                 backBuffer.put(b);
+                readCopyBuffer.put(b);
             } else {
                 char c = (char) b;
                 for (Trigger trigger : activeTriggers.values()) {
-                    if (c != '\n') {
-                        if (c != '\r')
-                            currentLine.append(c);
+                    putInCurrentLine(c);
+
+                    if (trigger.potentialMatch(c)) {
+                        captureBuffer.append(c);
                     } else {
-                        currentLine.setLength(0);
+                        for (int x=0; x<captureBuffer.length(); x++) {
+                            readCopyBuffer.putChar(captureBuffer.charAt(x));
+                        }
+                        captureBuffer.setLength(0);
+                        readCopyBuffer.put(b);
                     }
+
                     if (trigger.match(c)) {
                         handleMatch(trigger);
                     }
                 }
             }
         }
+
+        return createResultingBuffer(buffer, bytesRead);
+    }
+
+    private ByteBuffer createResultingBuffer(ByteBuffer buffer, int bytesRead) {
+        readCopyBuffer.flip();
+        if (bytesRead > readCopyBuffer.limit()) {
+            // Lazily create a new buffer to store our output that will now be modified
+            ByteBuffer writeBuffer = ByteBuffer.allocate(readCopyBuffer.limit());
+            while (readCopyBuffer.hasRemaining()) {
+                writeBuffer.put(readCopyBuffer.get());
+            }
+            return writeBuffer;
+        } else {
+            return buffer;
+        }
+    }
+
+    private void putInCurrentLine(char c) {
+        if (c != '\n') {
+            if (c != '\r')
+                currentLine.append(c);
+        } else {
+            currentLine.setLength(0);
+        }
     }
 
     private void handleMatch(Trigger trigger) {
-        Match match = new Match(trigger.getId(), currentLine.toString());
+        String matchedText;
+        if (trigger instanceof CapturingTrigger) {
+            matchedText = captureBuffer.toString();
+        } else {
+            matchedText = currentLine.toString();
+        }
+        if (matchedText.length() > 0 && matchedText.charAt(matchedText.length()-1) == '\r') {
+            matchedText = matchedText.substring(0, matchedText.length() -1);
+        }
+        Match match = new Match(trigger.getId(), matchedText);
+        if (trigger.shouldBeRemovedAfterMatch()) {
+            activeTriggers.remove(trigger.getId());
+        }
         waiting = false;
         lastMatch = match;
         notifyAll();
@@ -98,35 +180,46 @@ public class ScriptLexer {
 
     public static class Match {
         private final String matchedId;
-        private final String lastLine;
+        private final String matchedText;
 
-        public Match(String matchedId, String lastLine) {
+        public Match(String matchedId, String matchedText) {
             this.matchedId = matchedId;
-            this.lastLine = lastLine;
+            this.matchedText = matchedText;
         }
 
         public String getMatchedId() {
             return matchedId;
         }
 
-        public String getLastLine() {
-            return lastLine;
+        public String getMatchedText() {
+            return matchedText;
         }
     }
 
-    static class Trigger {
+    static interface Trigger {
+        boolean match(char c);
+        String getId();
+        boolean shouldBeRemovedAfterMatch();
+
+        boolean potentialMatch(char c);
+    }
+
+    static class DefaultTrigger implements Trigger{
         private final String id;
         private final boolean waitForLine;
         private final char[] text;
         private int pos;
         private boolean triggered;
 
-        public Trigger(String id, String line, boolean waitForLine) {
+        public DefaultTrigger(String id, String line, boolean waitForLine) {
             this.id = id;
             text = line.toCharArray();
             this.waitForLine = waitForLine;
             pos = 0;
-            triggered = false;
+        }
+
+        public boolean potentialMatch(char c) {
+            return triggered || text[pos] == c;
         }
 
         public boolean match(char c) {
@@ -159,6 +252,21 @@ public class ScriptLexer {
 
         public String getId() {
             return id;
+        }
+
+        public boolean shouldBeRemovedAfterMatch() {
+            return false;
+        }
+    }
+
+    class CapturingTrigger extends DefaultTrigger {
+
+        public CapturingTrigger(String id, String line, boolean waitForLine) {
+            super(id, line, waitForLine);
+        }
+
+        public boolean shouldBeRemovedAfterMatch() {
+            return true;
         }
     }
 }

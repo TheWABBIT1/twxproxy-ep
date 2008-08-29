@@ -17,7 +17,8 @@ import java.io.File;
  */
 public enum GlobalKey implements SectionKey {
     Setup("0", "Setup"),
-    BaseDirectory(new File(".").getAbsolutePath(), "Base Directory");
+    BaseDirectory(new File(".").getAbsolutePath(), "Base Directory"),
+    WebClient("0", "Enable web client");
 
     private String defaultValue;
 
@@ -41,6 +42,8 @@ public enum GlobalKey implements SectionKey {
         List<String> errors = new ArrayList<String>();
         switch (this) {
             case Setup :            if (!Validate.isIntegerInRange(value, 0, 1)) errors.add("Invalid value: "+value);
+                                    break;
+            case WebClient:         if (!Validate.isIntegerInRange(value, 0, 1)) errors.add("Invalid value: "+value);
                                     break;
             case BaseDirectory :    if (!Validate.isNotEmpty(value)) errors.add("Base directory is required");
                                     else {

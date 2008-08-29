@@ -45,23 +45,24 @@ public class ConfigurationServlet extends HttpServlet {
     private void renderForm(final HttpServletRequest req, HttpServletResponse httpServletResponse, final Map<String,List<String>> errors) throws IOException {
         generator.render("config.mt", httpServletResponse, new TemplateGenerator.TemplateCallback() {
             public void initTemplate(MiniTemplator template) throws MiniTemplator.VariableNotDefinedException, MiniTemplator.BlockNotDefinedException {
-                if (errors != null) {
-                    for (Map.Entry<String,List<String>> entry : errors.entrySet()) {
-                        for (String err : entry.getValue()) {
-                            template.setVariable("msg", err);
-                            template.addBlock("error");
-                        }
-                    }
-                    template.addBlock("errors");
-                }
-                setAll(template, GlobalKey.values());
-                setAll(template, WebKey.values());
-                setAll(template, ProxyKey.values());
+                setAll(template, GlobalKey.values(), errors);
+                setAll(template, WebKey.values(), errors);
+                setAll(template, ProxyKey.values(), errors);
             }
-            private void setAll(MiniTemplator template, SectionKey[] keys) throws MiniTemplator.VariableNotDefinedException, MiniTemplator.BlockNotDefinedException {
+            private void setAll(MiniTemplator template, SectionKey[] keys, Map<String,List<String>> errors) throws MiniTemplator.VariableNotDefinedException, MiniTemplator.BlockNotDefinedException {
                 for (SectionKey key : keys) {
                     if (GlobalKey.Setup == key) {
                         continue;
+                    }
+                    if (errors != null) {
+                        List<String> fieldErrors = errors.get(key.getFullName());
+                        if (fieldErrors != null && !fieldErrors.isEmpty()) {
+                            for (String err : fieldErrors) {
+                                template.setVariable("fieldError", err);
+                                template.addBlock("fieldError");
+                            }
+                            template.addBlock("fieldErrors");
+                        }
                     }
                     String val = req.getParameter(key.getFullName());
                     if (val == null) {

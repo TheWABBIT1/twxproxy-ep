@@ -4,6 +4,10 @@ body {
 
 }
 
+th {
+    text-align: left;
+}
+
 #ceiling {
     border-style: groove;
     border-color: #0000CC;

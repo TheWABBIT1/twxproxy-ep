@@ -69,7 +69,7 @@ public class AppIntegrationTest extends TestCase {
         FileUtils.writeStringToFile(new File(baseDir, "twxbbs.ini"),
                 "[Proxy]\n" +
                 "Port = 8023\n" +
-                "TWGSPort = 2222" +
+                "TWGSPort = "+(runThroughProxy ? 2222 : 3333) +
                 "\n" +
                 "[Web]\n" +
                 "Port = 8084\n" +
@@ -97,14 +97,15 @@ public class AppIntegrationTest extends TestCase {
                     Socket incomingSocket = server.accept();
                     byte[] buffer = new byte[1024];
                     int len = 0;
-                    int lastLen = 0;
+                    int dataReceived = 0;
                     while ((len = incomingSocket.getInputStream().read(buffer)) > 0) {
-                        lastLen = len;
+                        dataReceived += len;
+                        //System.out.println("received: "+dataReceived);
                         if (buffer[len-1] == -1) {
                             break;
                         }
                     }
-                    //System.out.println("received data: "+new String(buffer, 0, lastLen-1));
+                    System.out.println("received data: "+dataReceived);
                     incomingSocket.close();
                     server.close();
                 } catch (IOException e) {
@@ -123,7 +124,12 @@ public class AppIntegrationTest extends TestCase {
                     InputStream in = getClass().getResourceAsStream("/bible12.txt");
                     socket = new Socket("localhost", port);
                     Thread.sleep(1000);
-                    IOUtils.copy(in, socket.getOutputStream());
+                    byte[] buffer = new byte[5024];
+                    int len = 0;
+                    while ((len = in.read(buffer)) > 0) {
+                        socket.getOutputStream().write(buffer, 0, len);
+                        socket.getOutputStream().flush();
+                    }
                     socket.getOutputStream().write((byte)255);
                     socket.getOutputStream().flush();
                     //System.out.println("data sent");
@@ -136,6 +142,7 @@ public class AppIntegrationTest extends TestCase {
         });
         sendingThread.start();
         t.join();
+        sendingThread.interrupt();
         container.stop();
     }
 }

@@ -118,6 +118,10 @@ public class IniConfiguration implements Configuration {
         return getInt(GlobalKey.Setup) == 1;
     }
 
+    public boolean isWebClientEnabled() {
+        return getInt(GlobalKey.WebClient) == 1;
+    }
+
     public int getInt(SectionKey key) {
         return Integer.parseInt(values.get(key));
     }

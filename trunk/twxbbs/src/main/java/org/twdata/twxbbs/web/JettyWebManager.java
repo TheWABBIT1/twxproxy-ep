@@ -54,21 +54,23 @@ public class JettyWebManager implements WebManager {
             File web = new File(config.getBaseDir(), "web");
             if (web.exists()) {
                 ResourceHandler baseDirHandler=new ResourceHandler();
-                baseDirHandler.setBaseResource(Resource.newResource(new File(config.getBaseDir(), "web").toURL()));
+                baseDirHandler.setBaseResource(Resource.newResource(new File(config.getBaseDir(), "web").toURI().toURL()));
                 handlers.addHandler(baseDirHandler);
             }
             handlers.addHandler(internalHandler);
             server.setHandler(handlers);
 
             Context root = new Context(server,"/", Context.SESSIONS);
-            root.setWelcomeFiles(new String[]{"games.xhtml"});
-            if (!config.isSetup()) {
+
+            if (!config.isSetup() || !config.isWebClientEnabled()) {
                 root.addServlet(new ServletHolder(new ConfigurationServlet(config, templateGenerator)), "/*");
             } else {
+                root.setWelcomeFiles(new String[]{"games.xhtml"});
                 for (Map.Entry<String,Servlet> entry : servlets.entrySet()) {
                     root.addServlet(new ServletHolder(entry.getValue()), entry.getKey());
                 }
                 root.addServlet(new ServletHolder(servlets.get("/games")), "*.xhtml");
+                root.addServlet(new ServletHolder(new ConfigurationServlet(config, templateGenerator)), "/admin");
             }
         } catch (MalformedURLException e) {
             throw new RuntimeException("Unable to set resource directory");

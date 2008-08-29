@@ -24,6 +24,8 @@ public interface Configuration {
 
     boolean isSetup();
 
+    boolean isWebClientEnabled();
+
     void refresh(File baseDir);
 
     String get(SectionKey key);
