@@ -26,7 +26,7 @@ public class ScriptIoFilter extends IoFilterAdapter {
         if (o instanceof ByteBuffer) {
             ByteBuffer buffer = (ByteBuffer) o;
             for (ScriptLexer lexer : getPlayerLexers(ioSession)) {
-                lexer.parse(buffer);
+                buffer = lexer.parse(buffer);
                 buffer.flip();
             }
             nextFilter.messageReceived(ioSession, buffer);
@@ -40,7 +40,7 @@ public class ScriptIoFilter extends IoFilterAdapter {
         if (o instanceof ByteBuffer) {
             ByteBuffer buffer = (ByteBuffer) o;
             for (ScriptLexer lexer : getGameLexers(ioSession)) {
-                lexer.parse(buffer);
+                buffer = lexer.parse(buffer);
                 buffer.flip();
             }
             nextFilter.messageSent(ioSession, buffer);

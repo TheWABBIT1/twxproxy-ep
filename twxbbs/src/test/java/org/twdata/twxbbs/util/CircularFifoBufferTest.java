@@ -15,11 +15,15 @@ public class CircularFifoBufferTest extends TestCase {
         CircularFifoBuffer buffer = new CircularFifoBuffer(5);
         buffer.put((byte) 1);
         buffer.put((byte) 3);
+        assertEquals(2, buffer.remaining());
         assertTrue(buffer.hasRemaining());
         assertEquals((byte) 1, buffer.get());
+        assertEquals(1, buffer.remaining());
         assertTrue(buffer.hasRemaining());
         assertEquals((byte) 3, buffer.get());
+        assertEquals(0, buffer.remaining());
         assertFalse(buffer.hasRemaining());
+
     }
 
     public void testPutPastEnd() {
@@ -28,10 +32,13 @@ public class CircularFifoBufferTest extends TestCase {
         buffer.put((byte) 3);
         buffer.put((byte) 5);
         buffer.put((byte) 7);
+        assertEquals(2, buffer.remaining());
         assertTrue(buffer.hasRemaining());
         assertEquals((byte) 5, buffer.get());
+        assertEquals(1, buffer.remaining());
         assertTrue(buffer.hasRemaining());
         assertEquals((byte) 7, buffer.get());
+        assertEquals(0, buffer.remaining());
         assertFalse(buffer.hasRemaining());
     }
 }

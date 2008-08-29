@@ -37,8 +37,8 @@ public enum WebKey implements SectionKey {
     public List<String> validate(String value) {
         List<String> errors = new ArrayList<String>();
         switch (this) {
-            case Port :     if (!Validate.isIntegerInRange(value, 1, 65500)) errors.add("Invalid port number: "+value);
-                            if (!Validate.isPortFree(value)) errors.add("Port "+value+" is currently in use");
+            case Port :     if (!Validate.isIntegerInRange(value, 1, 65500)) errors.add("Invalid web port number: "+value);
+                            else if (!Validate.isPortFree(value)) errors.add("Web port "+value+" is currently in use");
                             break;
             case BaseURL:  if (!Validate.isNotEmpty(value)) errors.add("Web base URL must be defined"); else {
                                 if (!value.toLowerCase().startsWith("http")) errors.add("Web base URL should be either HTTP or HTTPS");

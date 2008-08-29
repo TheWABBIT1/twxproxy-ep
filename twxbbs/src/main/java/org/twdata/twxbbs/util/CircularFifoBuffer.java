@@ -55,6 +55,32 @@ public class CircularFifoBuffer extends ByteBuffer {
         return start != pos;
     }
 
+    @Override
+    public int remaining() {
+        if (hasRemaining()) {
+            if (pos > start) {
+                return pos - start;
+            } else {
+                return (buffer.length) - (start - pos);
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public byte[] array() {
+        byte[] result = new byte[remaining()];
+        int rpos = start;
+        for (int x=0; x<result.length; x++) {
+            result[x] = buffer[rpos++];
+            if (rpos == buffer.length) {
+                rpos = 0;
+            }
+        }
+        return result;
+    }
+
     public byte get(int i) {
         throw new UnsupportedOperationException();
     }
@@ -304,10 +330,6 @@ public class CircularFifoBuffer extends ByteBuffer {
     }
 
     public ByteBuffer asReadOnlyBuffer() {
-        throw new UnsupportedOperationException();
-    }
-
-    public byte[] array() {
         throw new UnsupportedOperationException();
     }
 

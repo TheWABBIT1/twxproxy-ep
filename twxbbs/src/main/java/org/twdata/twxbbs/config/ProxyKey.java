@@ -41,7 +41,7 @@ public enum ProxyKey implements SectionKey {
         List<String> errors = new ArrayList<String>();
         switch (this) {
             case Port :     if (!Validate.isIntegerInRange(value, 1, 65500)) errors.add("Invalid proxy port number: "+value);
-                            if (!Validate.isPortFree(value)) errors.add("Proxy port "+value+" is currently in use");
+                            else if (!Validate.isPortFree(value)) errors.add("Proxy port "+value+" is currently in use");
                             break;
             case Host :     if (!Validate.isNotEmpty(value)) errors.add("Proxy host must be defined");
                             break;

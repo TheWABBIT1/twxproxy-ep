@@ -3,7 +3,7 @@
 <head>
 <title>TWX BBS Admin</title>
 <link href="global.css" rel="stylesheet" type="text/css"></link>
-    <meta http-equiv="refresh" content="5;url=${baseUrl}:${port}"/>
+    <meta http-equiv="refresh" content="3;url=${baseUrl}:${port}"/>
 </head>
 
 <body>

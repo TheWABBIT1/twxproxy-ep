@@ -10,6 +10,10 @@ public interface ScriptApi {
 
     void setTextLineTrigger(String id, String text);
 
+    void setCapturingTextTrigger(String id, String text);
+
+    void setCapturingTextLineTrigger(String id, String text);
+
     void send(String text) throws Exception;
 
     String pause();

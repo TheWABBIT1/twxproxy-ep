@@ -1,10 +1,5 @@
 package org.twdata.twxbbs.proxy.script;
 
-import org.apache.mina.common.IoSession;
-import org.apache.mina.common.IoHandler;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoFilter;
-
 import java.io.IOException;
 
 /**
@@ -29,7 +24,7 @@ public class ScriptApiImpl implements ScriptApi {
     }
 
     public String getMatchedLine() {
-        return (lastMatch != null ? lastMatch.getLastLine() : null);
+        return (lastMatch != null ? lastMatch.getMatchedText() : null);
     }
 
     public void setTextTrigger(String id, String text) {
@@ -38,6 +33,14 @@ public class ScriptApiImpl implements ScriptApi {
 
     public void setTextLineTrigger(String id, String text) {
         lexer.addTextLineTrigger(id, text);
+    }
+
+    public void setCapturingTextTrigger(String id, String text) {
+        lexer.addCapturingTextTrigger(id, text);
+    }
+
+    public void setCapturingTextLineTrigger(String id, String text) {
+        lexer.addCapturingTextLineTrigger(id, text);
     }
 
     public void send(String text) throws Exception {
