@@ -44,6 +44,9 @@ public class ScriptApiImpl implements ScriptApi {
     }
 
     public void send(String text) throws Exception {
+        if (text != null) {
+            text = text.replace("*", "\r\n");
+        }
         sender.send(text);
     }
 

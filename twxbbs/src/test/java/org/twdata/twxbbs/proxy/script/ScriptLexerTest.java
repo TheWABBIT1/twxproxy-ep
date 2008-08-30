@@ -97,7 +97,32 @@ public class ScriptLexerTest extends TestCase {
                     Thread.sleep(500);
                     ByteBuffer outBuffer = lexer.parse(ByteBuffer.wrap("This guy bob is great\r\nyeah".getBytes()));
                     String bufferAsStr = readBufferIntoString(outBuffer);
-                    assertEquals("This guy \nyeah", bufferAsStr);
+                    assertEquals("This guy yeah", bufferAsStr);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("bad exception: "+ e);
+                }
+            }
+        });
+        t.start();
+        ScriptLexer.Match match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("bob is great", match.getMatchedText());
+    }
+
+    public void testCapturingTriggerSpreadOverMultipleCalls() throws IOException, InterruptedException {
+        final ScriptLexer lexer = new ScriptLexer();
+        lexer.addCapturingTextLineTrigger("foo", "bob");
+        lexer.setTimeout(5000);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                    ByteBuffer outBuffer = lexer.parse(ByteBuffer.wrap("This guy bo".getBytes()));
+                    ByteBuffer outBuffer2 = lexer.parse(ByteBuffer.wrap("b is great\r\nyeah".getBytes()));
+                    assertEquals("This guy ", readBufferIntoString(outBuffer));
+                    assertEquals("yeah", readBufferIntoString(outBuffer2));
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail("bad exception: "+ e);

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,30 +20,42 @@ public class JavascriptScript implements Script {
     private URL script;
     private ScriptApi gameApi;
     private ScriptApi playerApi;
+    private Map<String,Object> session;
+    private Map<String, Object> appContext;
 
-    public JavascriptScript(URL script, ScriptApi gameApi, ScriptApi playerApi) {
+    public JavascriptScript(URL script, ScriptApi gameApi, ScriptApi playerApi, Map<String,Object> session, Map<String,Object> appContext) {
         this.script = script;
         this.gameApi = gameApi;
         this.playerApi = playerApi;
+        this.session = session;
+        this.appContext = appContext;
     }
 
     public void run() {
         ScriptEngineManager mgr = new ScriptEngineManager();
         ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
-        Reader reader = null;
-        jsEngine.put("game", gameApi);
-        jsEngine.put("player", playerApi);
+        jsEngine.put("gameApi", gameApi);
+        jsEngine.put("playerApi", playerApi);
+        jsEngine.put("session", session);
+        jsEngine.put("application", appContext);
+
+        readScriptIntoEngine(jsEngine, getClass().getClassLoader().getResource("org/twdata/twxbbs/proxy/script/global.js"));
+        readScriptIntoEngine(jsEngine, script);
+    }
+
+    private void readScriptIntoEngine(ScriptEngine jsEngine, URL script) {
+        Reader scriptReader = null;
         try {
-            reader = new InputStreamReader(script.openStream());
-            jsEngine.eval(reader);
+            scriptReader = new InputStreamReader(script.openStream());
+            jsEngine.eval(scriptReader);
         } catch (ScriptException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         } catch (IOException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         } finally {
-            if (reader != null) {
+            if (scriptReader != null) {
                 try {
-                    reader.close();
+                    scriptReader.close();
                 } catch (IOException ex) {
                     // ignore
                 }
