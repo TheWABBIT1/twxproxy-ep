@@ -19,4 +19,5 @@ public interface ScriptApi {
     void killTextTrigger(String id);
 
 
+    String stripAnsi(String text);
 }

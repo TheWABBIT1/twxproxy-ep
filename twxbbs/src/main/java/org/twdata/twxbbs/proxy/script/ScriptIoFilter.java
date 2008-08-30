@@ -18,12 +18,10 @@ import java.net.URL;
  */
 public class ScriptIoFilter extends IoFilterAdapter {
 
-    private final List<URL> scriptUrls;
-    private final Map<String,Object> applicationContext;
+    private final ScriptManager scriptManager;
 
-    public ScriptIoFilter(List<URL> scriptUrls) {
-        this.scriptUrls = scriptUrls;
-        this.applicationContext = new HashMap<String,Object>();
+    public ScriptIoFilter(ScriptManager scriptManager) {
+        this.scriptManager = scriptManager;
     }
 
     @Override
@@ -65,30 +63,32 @@ public class ScriptIoFilter extends IoFilterAdapter {
 
     @Override
     public void sessionOpened(final NextFilter nextFilter, final IoSession ioSession) throws Exception {
-        List<Thread> scripts = new ArrayList<Thread>();
-        List<ScriptLexer> gameLexers = new ArrayList<ScriptLexer>();
-        List<ScriptLexer> playerLexers = new ArrayList<ScriptLexer>();
-        Map<String,Object> sessionContext = new HashMap<String,Object>();
-        for (URL url : scriptUrls) {
-            ScriptLexer gameLexer = new ScriptLexer();
-            ScriptApi gameApi = new ScriptApiImpl(gameLexer, new ScriptApiImpl.TextSender() {
-                public void send(String text) throws Exception {
-                    nextFilter.messageReceived(ioSession, ByteBuffer.wrap(text.getBytes()));
-                }
-            });
-            ScriptLexer playerLexer = new ScriptLexer();
-            ScriptApi playerApi = new ScriptApiImpl(playerLexer, new ScriptApiImpl.TextSender() {
-                public void send(String text) throws Exception {
-                    nextFilter.filterWrite(ioSession, new WriteRequest(ByteBuffer.wrap(text.getBytes())));
-                }
-            });
-            Script script = new JavascriptScript(url, gameApi, playerApi, sessionContext, applicationContext);
-            gameLexers.add(gameLexer);
-            playerLexers.add(playerLexer);
-            Thread t = new Thread(script);
-            scripts.add(t);
-            t.start();
-        }
+        final List<ScriptLexer> gameLexers = new ArrayList<ScriptLexer>();
+        final List<ScriptLexer> playerLexers = new ArrayList<ScriptLexer>();
+        List<Thread> scripts = scriptManager.startScripts(ScriptType.session, new ScriptVariablesFactory() {
+
+            public Map<String, Object> create() {
+                Map<String,Object> vars = new HashMap<String,Object>();
+                ScriptLexer gameLexer = new ScriptLexer();
+                ScriptApi gameApi = new ScriptApiImpl(gameLexer, new ScriptApiImpl.TextSender() {
+                    public void send(String text) throws Exception {
+                        nextFilter.messageReceived(ioSession, ByteBuffer.wrap(text.getBytes()));
+                    }
+                });
+                ScriptLexer playerLexer = new ScriptLexer();
+                ScriptApi playerApi = new ScriptApiImpl(playerLexer, new ScriptApiImpl.TextSender() {
+                    public void send(String text) throws Exception {
+                        nextFilter.filterWrite(ioSession, new WriteRequest(ByteBuffer.wrap(text.getBytes())));
+                    }
+                });
+                vars.put("gameApi", gameApi);
+                vars.put("playerApi", playerApi);
+                gameLexers.add(gameLexer);
+                playerLexers.add(playerLexer);
+                return vars;
+            }
+        });
+
         ioSession.setAttribute("gameLexers", gameLexers);
         ioSession.setAttribute("playerLexers", playerLexers);
         ioSession.setAttribute("scriptThreads", scripts);

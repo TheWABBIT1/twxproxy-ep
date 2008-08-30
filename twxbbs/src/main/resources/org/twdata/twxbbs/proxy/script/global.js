@@ -11,7 +11,7 @@ function Api(lexer) {
     this.pause = function() {
         var id = lexer.pause();
         if (id != null) {
-            triggerCallbacks[id](lexer.getMatchedLine());
+            triggerCallbacks[id](lexer.stripAnsi(lexer.getMatchedLine()));
         }
     }
     this.killTextTrigger = function(id) {
@@ -37,3 +37,7 @@ function Api(lexer) {
 
 var game = new Api(gameApi);
 var player = new Api(playerApi);
+
+function stripAnsi(txt) {
+    return gameApi.stripAnsi(txt);
+}

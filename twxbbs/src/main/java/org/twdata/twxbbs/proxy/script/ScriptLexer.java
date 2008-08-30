@@ -19,6 +19,7 @@ public class ScriptLexer {
 
     // The current line
     private final StringBuffer currentLine;
+    private boolean resetCurrentLineNextCharacter;
 
     // Contains text that isn't being actively matched, but may
     private final CircularFifoBuffer backBuffer;
@@ -120,11 +121,7 @@ public class ScriptLexer {
 
                 if (capturing) {
                     captureBuffer.append(c);
-                    System.out.println("adding to buffer:"+captureBuffer);
                 } else {
-                    if (captureBuffer.length() > 0) {
-                        System.out.println("Clearing buffer");
-                    }
                     for (int x=0; x<captureBuffer.length(); x++) {
                         readCopyBuffer.putChar(captureBuffer.charAt(x));
                     }
@@ -159,11 +156,15 @@ public class ScriptLexer {
     }
 
     private void putInCurrentLine(char c) {
+        if (resetCurrentLineNextCharacter) {
+            currentLine.setLength(0);
+            resetCurrentLineNextCharacter = false;
+        }
         if (c != '\n') {
             if (c != '\r')
                 currentLine.append(c);
         } else {
-            currentLine.setLength(0);
+            resetCurrentLineNextCharacter = true;
         }
     }
 
