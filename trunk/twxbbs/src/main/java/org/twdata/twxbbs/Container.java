@@ -6,6 +6,7 @@ import org.twdata.twxbbs.web.*;
 import org.twdata.twxbbs.proxy.ProxyManager;
 import org.twdata.twxbbs.proxy.DefaultProxyManager;
 import org.twdata.twxbbs.proxy.ProxyConnector;
+import org.twdata.twxbbs.proxy.script.DefaultScriptManager;
 import org.twdata.twxbbs.config.impl.IniConfiguration;
 import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.event.EventManager;
@@ -42,9 +43,13 @@ public class Container {
         objects.put(TemplateGenerator.class, new TemplateGenerator(
                 get(EventManager.class)
         ));
+        objects.put(DefaultScriptManager.class, new DefaultScriptManager(
+                get(EventManager.class)
+        ));
         objects.put(ProxyManager.class, new DefaultProxyManager(
                 get(EventManager.class),
-                get(ProxyConnector.class)));
+                get(ProxyConnector.class),
+                get(DefaultScriptManager.class)));
         objects.put(GameListServlet.class, new GameListServlet(
                 get(GameAccessor.class),
                 get(TemplateGenerator.class)

@@ -71,6 +71,60 @@ public class ScriptApiImpl implements ScriptApi {
         lexer.removeTextTrigger(id);
     }
 
+    public String stripAnsi(String text) {
+        return stripAnsi(text.getBytes(), text.length());
+    }
+
+    int NORMAL = 0, ESCAPE = 1, ESCAPE2 = 2, ESCAPE_STRING = 3;
+    int ansiState = NORMAL;
+
+    //hand made lexer to strip out pesky ansi escape codes
+    //we don't want the overhead of another lexer, and we can't do it in the full lex
+    private String stripAnsi(byte[] b, int amount) {
+        int counter, rCounter, numbytes;
+
+        byte[] c = new byte[amount];
+        rCounter = 0;
+        for (counter = 0; counter < amount; counter++) {
+            char current = (char) b[counter];
+            switch (ansiState) {
+                case 0: //NORMAL:
+                    if (current != 27 && current != 0) //get rid of those pesky nulls
+                    {
+                        c[rCounter] = b[counter];
+                        rCounter++;
+                    } else if (current == 27) {
+                        ansiState = ESCAPE;
+                    }
+                    break;
+                case 1: //ESCAPE:
+                    if (current == '[' || Character.isDigit(current)) {
+                        ansiState = ESCAPE2;
+                    } else if (current == '\"') {
+                        ansiState = ESCAPE_STRING;
+
+                    }
+                    break;
+                case 2: //ESCAPE2
+                    if (Character.isLetter(current)) {
+                        ansiState = NORMAL;
+                    } else if (current == '[' || Character.isDigit(current)) {
+                        ansiState = ESCAPE2;
+                    } else {
+                        ansiState = ESCAPE;
+                    }
+                    break;
+                case 3: //ESCAPE_STRING:
+                    if (current == '\"') {
+                        ansiState = ESCAPE;
+                    }
+                    break;
+            }
+        }
+
+        return new String(c, 0, rCounter);
+    }
+
     public static interface TextSender {
         void send(String text) throws Exception;
     }

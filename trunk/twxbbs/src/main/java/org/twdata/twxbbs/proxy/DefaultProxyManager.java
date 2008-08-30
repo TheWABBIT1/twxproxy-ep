@@ -6,14 +6,15 @@ import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.twdata.twxbbs.GameRegistration;
 import org.twdata.twxbbs.Container;
 import org.twdata.twxbbs.proxy.script.ScriptIoFilter;
+import org.twdata.twxbbs.proxy.script.ScriptManager;
 import org.twdata.twxbbs.config.ConfigurationRefreshedEvent;
 import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.event.EventManager;
 import org.twdata.twxbbs.event.EventListener;
 
-import java.security.KeyStore;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.net.MalformedURLException;
 import java.io.IOException;
 import java.io.File;
 import java.util.List;
@@ -33,13 +34,12 @@ public class DefaultProxyManager implements ProxyManager {
     private int targetPort;
     IoAcceptor acceptor;
     private ProxyConnector connector;
-    private List<URL> scripts;
+    private final ScriptManager scriptManager;
 
-    public DefaultProxyManager(EventManager eventManager, ProxyConnector connector) {
+    public DefaultProxyManager(EventManager eventManager, ProxyConnector connector, ScriptManager scriptManager) {
         this.connector = connector;
+        this.scriptManager = scriptManager;
         eventManager.register(this);
-        scripts = new ArrayList<URL>();
-
     }
 
     @EventListener
@@ -48,14 +48,6 @@ public class DefaultProxyManager implements ProxyManager {
         this.proxyPort = config.getProxyPort();
         this.targetHost = config.getTwgsHost();
         this.targetPort = config.getTwgsPort();
-
-        scripts.clear();
-        File scriptsDir = new File(config.getBaseDir(), "scripts");
-        if (scriptsDir.exists()) {
-            for (File file : scriptsDir.listFiles()) {
-                scripts.add(file.toURI().toURL());
-            }
-        }
 
         stop();
         acceptor = new SocketAcceptor();
@@ -68,7 +60,7 @@ public class DefaultProxyManager implements ProxyManager {
         if (acceptor != null) {
             // Create TCP/IP acceptor.
             SocketAcceptorConfig cfg = new SocketAcceptorConfig();
-            cfg.getFilterChain().addFirst("scripts", new ScriptIoFilter(scripts));
+            cfg.getFilterChain().addFirst("sessionScripts", new ScriptIoFilter(scriptManager));
             acceptor
                 .bind(new InetSocketAddress(proxyPort), new SessionSpecificIoHandler(connector, targetHost, targetPort), cfg);
             System.out.println("Proxy started on port "+proxyPort+" connecting to "+targetHost+":"+targetPort);
