@@ -4,8 +4,6 @@ public interface ScriptApi {
 
     String getCurrentLine();
 
-    String getMatchedLine();
-
     void setTextTrigger(String id, String text);
 
     void setTextLineTrigger(String id, String text);

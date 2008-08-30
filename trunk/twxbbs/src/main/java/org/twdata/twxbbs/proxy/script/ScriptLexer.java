@@ -109,19 +109,31 @@ public class ScriptLexer {
                 readCopyBuffer.put(b);
             } else {
                 char c = (char) b;
+                boolean capturing = false;
+                putInCurrentLine(c);
                 for (Trigger trigger : activeTriggers.values()) {
-                    putInCurrentLine(c);
 
-                    if (trigger.potentialMatch(c)) {
-                        captureBuffer.append(c);
-                    } else {
-                        for (int x=0; x<captureBuffer.length(); x++) {
-                            readCopyBuffer.putChar(captureBuffer.charAt(x));
-                        }
-                        captureBuffer.setLength(0);
-                        readCopyBuffer.put(b);
+                    if (trigger instanceof CapturingTrigger && trigger.potentialMatch(c)) {
+                        capturing = true;
                     }
+                }
 
+                if (capturing) {
+                    captureBuffer.append(c);
+                    System.out.println("adding to buffer:"+captureBuffer);
+                } else {
+                    if (captureBuffer.length() > 0) {
+                        System.out.println("Clearing buffer");
+                    }
+                    for (int x=0; x<captureBuffer.length(); x++) {
+                        readCopyBuffer.putChar(captureBuffer.charAt(x));
+                    }
+                    captureBuffer.setLength(0);
+                    readCopyBuffer.put(b);
+
+                }
+
+                for (Trigger trigger : activeTriggers.values()) {
                     if (trigger.match(c)) {
                         handleMatch(trigger);
                     }
@@ -162,8 +174,12 @@ public class ScriptLexer {
         } else {
             matchedText = currentLine.toString();
         }
-        if (matchedText.length() > 0 && matchedText.charAt(matchedText.length()-1) == '\r') {
-            matchedText = matchedText.substring(0, matchedText.length() -1);
+        if (matchedText.length() > 0) {
+            if (matchedText.charAt(matchedText.length()-1) == '\r') {
+                matchedText = matchedText.substring(0, matchedText.length() -1);
+            } else if (matchedText.charAt(matchedText.length()-1) == '\n') {
+                matchedText = matchedText.substring(0, matchedText.length() -2);
+            }
         }
         Match match = new Match(trigger.getId(), matchedText);
         if (trigger.shouldBeRemovedAfterMatch()) {
@@ -237,7 +253,7 @@ public class ScriptLexer {
                     pos = 0;
                 }
             } else {
-                if ('\r' == c) {
+                if ('\n' == c) {
                     reset();
                     return true;
                 }

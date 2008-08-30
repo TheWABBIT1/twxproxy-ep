@@ -1,9 +1,12 @@
 package org.twdata.twxbbs.proxy.script;
 
 import org.apache.mina.common.*;
+import org.apache.mina.common.support.DefaultWriteFuture;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.net.URL;
 
 /**
@@ -16,9 +19,11 @@ import java.net.URL;
 public class ScriptIoFilter extends IoFilterAdapter {
 
     private final List<URL> scriptUrls;
+    private final Map<String,Object> applicationContext;
 
     public ScriptIoFilter(List<URL> scriptUrls) {
         this.scriptUrls = scriptUrls;
+        this.applicationContext = new HashMap<String,Object>();
     }
 
     @Override
@@ -36,14 +41,16 @@ public class ScriptIoFilter extends IoFilterAdapter {
     }
 
     @Override
-    public void messageSent(NextFilter nextFilter, IoSession ioSession, Object o) throws Exception {
+    public void filterWrite(NextFilter nextFilter, IoSession ioSession, WriteRequest req) throws Exception {
+        Object o = req.getMessage();
         if (o instanceof ByteBuffer) {
             ByteBuffer buffer = (ByteBuffer) o;
             for (ScriptLexer lexer : getGameLexers(ioSession)) {
                 buffer = lexer.parse(buffer);
                 buffer.flip();
             }
-            nextFilter.messageSent(ioSession, buffer);
+            WriteFuture future = new DefaultWriteFuture(ioSession, buffer);
+            nextFilter.filterWrite(ioSession, new WriteRequest(buffer, future));
         } else {
             throw new IllegalArgumentException("Only byte buffers are supported");
         }
@@ -61,6 +68,7 @@ public class ScriptIoFilter extends IoFilterAdapter {
         List<Thread> scripts = new ArrayList<Thread>();
         List<ScriptLexer> gameLexers = new ArrayList<ScriptLexer>();
         List<ScriptLexer> playerLexers = new ArrayList<ScriptLexer>();
+        Map<String,Object> sessionContext = new HashMap<String,Object>();
         for (URL url : scriptUrls) {
             ScriptLexer gameLexer = new ScriptLexer();
             ScriptApi gameApi = new ScriptApiImpl(gameLexer, new ScriptApiImpl.TextSender() {
@@ -74,7 +82,7 @@ public class ScriptIoFilter extends IoFilterAdapter {
                     nextFilter.filterWrite(ioSession, new WriteRequest(ByteBuffer.wrap(text.getBytes())));
                 }
             });
-            Script script = new JavascriptScript(url, gameApi, playerApi);
+            Script script = new JavascriptScript(url, gameApi, playerApi, sessionContext, applicationContext);
             gameLexers.add(gameLexer);
             playerLexers.add(playerLexer);
             Thread t = new Thread(script);
