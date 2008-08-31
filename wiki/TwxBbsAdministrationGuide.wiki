@@ -1,4 +1,5 @@
 #summary A guide for administrators of the TWX BBS application
+#labels Featured
 
 = Introduction =
 
