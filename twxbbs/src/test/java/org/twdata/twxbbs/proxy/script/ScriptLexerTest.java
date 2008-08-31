@@ -87,6 +87,93 @@ public class ScriptLexerTest extends TestCase {
         assertEquals("bob", match.getMatchedText());
     }
 
+    public void testCapturingTriggerTwice() throws IOException, InterruptedException {
+        final ScriptLexer lexer = new ScriptLexer();
+        lexer.addCapturingTextTrigger("foo", "bob");
+        lexer.setTimeout(5000);
+        sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "This guy  is great\r\n");
+        ScriptLexer.Match match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("bob", match.getMatchedText());
+        lexer.addCapturingTextTrigger("foo", "bob");
+        sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "This guy  is great\r\n");
+        match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("bob", match.getMatchedText());
+    }
+
+    private void sendTextOnOtherThread(final ScriptLexer lexer, final String txt, final String expected) {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                    ByteBuffer outBuffer = lexer.parse(ByteBuffer.wrap(txt.getBytes()));
+                    String bufferAsStr = readBufferIntoString(outBuffer);
+                    assertEquals(expected, bufferAsStr);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("bad exception: "+ e);
+                }
+            }
+        });
+        t.start();
+    }
+
+    public void testCapturingTriggerThatMatchesAnything() throws IOException, InterruptedException {
+        final ScriptLexer lexer = new ScriptLexer();
+        lexer.addCapturingTextTrigger("foo", "");
+        lexer.setTimeout(5000);
+        sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "his guy bob is great\r\n");
+        ScriptLexer.Match match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("T", match.getMatchedText());
+    }
+
+    public void testCapturingTriggerThatMatchesAnythingTwice() throws IOException, InterruptedException {
+        final ScriptLexer lexer = new ScriptLexer();
+        lexer.addCapturingTextTrigger("foo", "");
+        lexer.setTimeout(5000);
+        sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "his guy bob is great\r\n");
+        ScriptLexer.Match match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("T", match.getMatchedText());
+        lexer.addCapturingTextTrigger("foo", "");
+        sendTextOnOtherThread(lexer, "And jan is cool too\r\n", "nd jan is cool too\r\n");
+        match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("A", match.getMatchedText());
+    }
+
+    public void testCapturingTriggerThatMatchesAnythingButNotBackBuffer() throws IOException, InterruptedException {
+        final ScriptLexer lexer = new ScriptLexer();
+        lexer.parse(ByteBuffer.wrap("some precursor text".getBytes()));
+        lexer.addCapturingTextTrigger("foo", "");
+        lexer.setTimeout(5000);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                    ByteBuffer outBuffer = lexer.parse(ByteBuffer.wrap("This guy bob is great\r\n".getBytes()));
+                    String bufferAsStr = readBufferIntoString(outBuffer);
+                    assertEquals("his guy bob is great\r\n", bufferAsStr);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("bad exception: "+ e);
+                }
+            }
+        });
+        t.start();
+        ScriptLexer.Match match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("T", match.getMatchedText());
+    }
+
     public void testCapturingTriggerForLine() throws IOException, InterruptedException {
         final ScriptLexer lexer = new ScriptLexer();
         lexer.addCapturingTextLineTrigger("foo", "bob");
@@ -109,6 +196,30 @@ public class ScriptLexerTest extends TestCase {
         assertNotNull(match);
         assertEquals("foo", match.getMatchedId());
         assertEquals("bob is great", match.getMatchedText());
+    }
+
+    public void testCapturingTriggerForLineThatMatchesAnything() throws IOException, InterruptedException {
+        final ScriptLexer lexer = new ScriptLexer();
+        lexer.addCapturingTextLineTrigger("foo", "");
+        lexer.setTimeout(5000);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                    ByteBuffer outBuffer = lexer.parse(ByteBuffer.wrap("This guy bob is great\r\nyeah".getBytes()));
+                    String bufferAsStr = readBufferIntoString(outBuffer);
+                    assertEquals("yeah", bufferAsStr);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("bad exception: "+ e);
+                }
+            }
+        });
+        t.start();
+        ScriptLexer.Match match = lexer.waitForTriggers();
+        assertNotNull(match);
+        assertEquals("foo", match.getMatchedId());
+        assertEquals("This guy bob is great", match.getMatchedText());
     }
 
     public void testCapturingTriggerSpreadOverMultipleCalls() throws IOException, InterruptedException {

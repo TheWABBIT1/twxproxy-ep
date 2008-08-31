@@ -19,8 +19,7 @@ public class CircularFifoBuffer extends ByteBuffer {
 
     public CircularFifoBuffer(int size) {
         this.buffer = new byte[size];
-        pos = 0;
-        start = 0;
+        clear();
     }
 
     public ByteBuffer put(byte b) {
@@ -79,6 +78,12 @@ public class CircularFifoBuffer extends ByteBuffer {
             }
         }
         return result;
+    }
+
+    public ByteBuffer clear() {
+        pos = 0;
+        start = 0;
+        return this;
     }
 
     public byte get(int i) {
@@ -306,10 +311,6 @@ public class CircularFifoBuffer extends ByteBuffer {
     }
 
     public ByteBuffer reset() {
-        throw new UnsupportedOperationException();
-    }
-
-    public ByteBuffer clear() {
         throw new UnsupportedOperationException();
     }
 

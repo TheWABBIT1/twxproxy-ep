@@ -68,7 +68,13 @@ public class ScriptIoFilter extends IoFilterAdapter {
         List<Thread> scripts = scriptManager.startScripts(ScriptType.session, new ScriptVariablesFactory() {
 
             public Map<String, Object> create() {
-                Map<String,Object> vars = new HashMap<String,Object>();
+                Map<String,Object> vars = new HashMap<String,Object>(){
+                    @Override
+                    public void clear() {
+                        gameLexers.remove(((ScriptApiImpl)get("gameApi")).getScriptLexer());
+                        playerLexers.remove(((ScriptApiImpl)get("playerApi")).getScriptLexer());
+                    }
+                };
                 ScriptLexer gameLexer = new ScriptLexer();
                 ScriptApi gameApi = new ScriptApiImpl(gameLexer, new ScriptApiImpl.TextSender() {
                     public void send(String text) throws Exception {

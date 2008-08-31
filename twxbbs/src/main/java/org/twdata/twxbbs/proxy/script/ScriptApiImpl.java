@@ -67,6 +67,10 @@ public class ScriptApiImpl implements ScriptApi {
         }
     }
 
+    public ScriptLexer getScriptLexer() {
+        return lexer;
+    }
+
     public void killTextTrigger(String id) {
         lexer.removeTextTrigger(id);
     }

@@ -38,15 +38,15 @@ public class DefaultScriptManager implements ScriptManager {
         start();
     }
 
-    private List<URL> collectScripts(String name) {
-        List<URL> scripts = new ArrayList<URL>();
+    private Collection<URL> collectScripts(String name) {
+        Map<String,URL> scripts = new TreeMap<String,URL>();
         if (scriptsDir.exists()) {
             File sessionScriptsDir = new File(scriptsDir, name);
             if (sessionScriptsDir.exists()) {
                 for (File file : sessionScriptsDir.listFiles()) {
                     if (!file.isDirectory()) {
                         try {
-                            scripts.add(file.toURI().toURL());
+                            scripts.put(file.getName(), file.toURI().toURL());
                         } catch (MalformedURLException e) {
                             System.err.println("Unable to add script:"+file.getAbsolutePath());
                         }
@@ -54,7 +54,7 @@ public class DefaultScriptManager implements ScriptManager {
                 }
             }
         }
-        return scripts;
+        return scripts.values();
     }
 
     public void stop() {
@@ -91,7 +91,7 @@ public class DefaultScriptManager implements ScriptManager {
         if (type != ScriptType.application) {
             context = new HashMap<String,Object>();
         }
-        List<URL> scriptUrls = collectScripts(type.name());
+        Collection<URL> scriptUrls = collectScripts(type.name());
         for (URL url : scriptUrls) {
 
             Map<String,Object> vars = varFactory.create();

@@ -61,11 +61,17 @@ public class ScriptLexer {
 
     public synchronized void addCapturingTextTrigger(String id, String text) {
         if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+        if (text == null || text.length() == 0) {
+            backBuffer.clear();
+        }
         activeTriggers.put(id, new CapturingTrigger(id, text, false));
     }
 
     public synchronized void addCapturingTextLineTrigger(String id, String text) {
         if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+        if (text == null || text.length() == 0) {
+            backBuffer.clear();
+        }
         activeTriggers.put(id, new CapturingTrigger(id, text, true));
     }
 
@@ -88,6 +94,8 @@ public class ScriptLexer {
             if (lastMatch == null) {
                 wait(timeout);
             }
+        } catch (InterruptedException ex) {
+            System.out.println("Stopping script");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -108,6 +116,7 @@ public class ScriptLexer {
             if (!waiting) {
                 backBuffer.put(b);
                 readCopyBuffer.put(b);
+                captureBuffer.setLength(0);
             } else {
                 char c = (char) b;
                 boolean capturing = false;
@@ -236,14 +245,14 @@ public class ScriptLexer {
         }
 
         public boolean potentialMatch(char c) {
-            return triggered || text[pos] == c;
+            return triggered || text.length == 0 || text[pos] == c;
         }
 
         public boolean match(char c) {
             if (!triggered) {
-                if (text[pos] == c) {
+                if (text.length == 0 || text[pos] == c) {
                     pos++;
-                    if (text.length == pos) {
+                    if (text.length == 0 || text.length == pos) {
                         triggered = true;
                         if (!waitForLine) {
                             reset();
