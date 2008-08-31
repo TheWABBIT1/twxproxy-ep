@@ -93,7 +93,53 @@
                     </execution>
                 </executions>
             </plugin>
+              <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                  <descriptors>
+                    <descriptor>src/assemble/bin.xml</descriptor>
+                  </descriptors>
+                </configuration>
+                <executions>
+                  <execution>
+                    <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                    <phase>package</phase> <!-- append to the packaging phase. -->
+                    <goals>
+                      <goal>attached</goal> <!-- goals == mojos -->
+                    </goals>
+                  </execution>
+                </executions>
+              </plugin>
+            <plugin>
+              <artifactId>maven-release-plugin</artifactId>
+              <version>2.0-beta-7</version>
+              <configuration>
+                <tagBase>https://twxproxy-ep.googlecode.com/svn/tags</tagBase>
+                <autoVersionSubmodules>true</autoVersionSubmodules>
+              </configuration>
+            </plugin>
+
         </plugins>
+        <extensions>
+            <extension>
+                <groupId>org.jvnet.wagon-svn</groupId>
+                <artifactId>wagon-svn</artifactId>
+                <version>1.8</version>
+            </extension>
+        </extensions>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>twdata-m2-repository</id>
+            <url>svn:https://twdata-m2-repository.googlecode.com/svn</url>
+        </repository>
+    </distributionManagement>
+
+    <scm>
+        <connection>scm:svn:https://twxproxy-ep.googlecode.com/svn/trunk/twxbbs</connection>
+        <developerConnection>scm:svn:https://twxproxy-ep.googlecode.com/svn/trunk/twxbbs</developerConnection>
+    </scm>
 
 </project>
