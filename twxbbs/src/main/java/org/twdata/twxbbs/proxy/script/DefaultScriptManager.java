@@ -95,8 +95,8 @@ public class DefaultScriptManager implements ScriptManager {
         for (URL url : scriptUrls) {
 
             Map<String,Object> vars = varFactory.create();
-            if (type != ScriptType.application) {
-                vars.put("context", context);
+            if (type == ScriptType.session) {
+                vars.put("session", context);
             }
             vars.put("application", context);
             Script script = new JavascriptScript(url, vars);
