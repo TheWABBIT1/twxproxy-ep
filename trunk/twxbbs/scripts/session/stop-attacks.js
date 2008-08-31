@@ -8,9 +8,9 @@ function maybeAttack(prompt) {
 function attack(prompt) {
     match = prompt.match(attackPtn);
     if (match != null) {
-        println("Try to attack "+match[1]+" with "+match[4]+" using "+match[3]+" fighters");
-        player.send("*\u001b[30mDon't be a dick*");
-        game.setCapturingTextLineTrigger("no", "No", function(txt){println("txt:"+txt);});
+        println("Try to attack "+match[1]+" with "+match[4]+" using "+match[3]+" fighters in game "+currentGame);
+        player.send("*\u001b[31m\u001b[1mLet's just be friends\u001b[22m*");
+        game.setCapturingTextLineTrigger("no", "No", function(txt){});
         game.send("n");
         game.pause();
     } else {
@@ -20,6 +20,13 @@ function attack(prompt) {
     game.pause();
 }
 
+function gameSelection(prompt) {
+    player.setCapturingTextTrigger("sel", "", function(txt) {currentGame=txt; game.send(txt); game.pause()});
+    player.pause();
+}
+
+var currentGame;
+game.setTextTrigger("gameSelection", "(? for menu):", gameSelection);
 game.setTextTrigger("attack", "Attack", maybeAttack);
 game.pause();
 

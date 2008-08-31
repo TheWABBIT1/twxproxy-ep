@@ -33,6 +33,7 @@ public class JavascriptScript implements Script {
         }
         readScriptIntoEngine(jsEngine, getClass().getClassLoader().getResource("org/twdata/twxbbs/proxy/script/global.js"));
         readScriptIntoEngine(jsEngine, script);
+        variables.clear();
     }
 
     private void readScriptIntoEngine(ScriptEngine jsEngine, URL script) {
