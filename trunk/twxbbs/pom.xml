@@ -3,7 +3,7 @@
     <groupId>com.twxproxy</groupId>
     <artifactId>twxbbs</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-alpha-1</version>
+    <version>1.0-alpha-2-SNAPSHOT</version>
     <name>twxbbs</name>
     <url>http://twxproxy.com</url>
     <dependencies>
@@ -137,8 +137,8 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:svn:https://twxproxy-ep.googlecode.com/svn/tags/twxbbs-1.0-alpha-1</connection>
-        <developerConnection>scm:svn:https://twxproxy-ep.googlecode.com/svn/tags/twxbbs-1.0-alpha-1</developerConnection>
+        <connection>scm:svn:https://twxproxy-ep.googlecode.com/svn/trunk/twxbbs</connection>
+        <developerConnection>scm:svn:https://twxproxy-ep.googlecode.com/svn/trunk/twxbbs</developerConnection>
     </scm>
 
 </project>
