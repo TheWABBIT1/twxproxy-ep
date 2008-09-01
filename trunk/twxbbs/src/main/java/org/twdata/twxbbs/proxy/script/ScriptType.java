@@ -8,6 +8,7 @@ package org.twdata.twxbbs.proxy.script;
  * To change this template use File | Settings | File Templates.
  */
 public enum ScriptType {
+    game,
     session,
     application
 }

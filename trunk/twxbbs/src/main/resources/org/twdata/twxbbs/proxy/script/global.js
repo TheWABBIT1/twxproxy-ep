@@ -39,5 +39,5 @@ var game = new Api(gameApi);
 var player = new Api(playerApi);
 
 function stripAnsi(txt) {
-    return gameApi.stripAnsi(txt);
+    return new String(gameApi.stripAnsi(txt));
 }

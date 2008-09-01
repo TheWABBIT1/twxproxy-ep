@@ -36,4 +36,3 @@ game.setTextTrigger("passwd", "Password?", passwd);
 game.pause();
 game.setTextTrigger("Command", "Command [", function(txt){});
 game.pause();
-println("Login done");

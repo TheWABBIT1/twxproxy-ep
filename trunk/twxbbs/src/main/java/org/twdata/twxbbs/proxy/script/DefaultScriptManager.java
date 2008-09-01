@@ -71,7 +71,7 @@ public class DefaultScriptManager implements ScriptManager {
     }
 
     public void start() {
-        applicationScriptThreads = startScripts(ScriptType.application, new ScriptVariablesFactory() {
+        applicationScriptThreads = startScripts(ScriptType.application.name(), new ScriptVariablesFactory() {
             public Map<String, Object> create() {
                 final Map<String,Object> vars = new HashMap<String,Object>();
                 vars.put("configuration", configuration);
@@ -85,26 +85,25 @@ public class DefaultScriptManager implements ScriptManager {
         stop();
     }
     
-    public List<Thread> startScripts(ScriptType type, ScriptVariablesFactory varFactory) {
+    public List<Thread> startScripts(String path, ScriptVariablesFactory varFactory) {
         List<Thread> scriptThreads = new ArrayList<Thread>();
-        Map<String,Object> context = applicationContext;
-        if (type != ScriptType.application) {
-            context = new HashMap<String,Object>();
-        }
-        Collection<URL> scriptUrls = collectScripts(type.name());
+        Collection<URL> scriptUrls = collectScripts(path);
         for (URL url : scriptUrls) {
-
-            Map<String,Object> vars = varFactory.create();
-            if (type == ScriptType.session) {
-                vars.put("session", context);
-            }
-            vars.put("application", context);
-            Script script = new JavascriptScript(url, vars);
-            Thread t = new Thread(script);
-            scriptThreads.add(t);
-            System.out.println("Executing script "+url);
-            t.start();
+            Script script = new JavascriptScript(url);
+            scriptThreads.add(startScript(script, varFactory.create()));
         }
         return scriptThreads;
+    }
+
+    public Thread startScript(final Script script, final Map<String,Object> vars) {
+
+        vars.put("application", applicationContext);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                script.run(vars);
+            }
+        });
+        t.start();
+        return t;
     }
 }

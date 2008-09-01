@@ -20,4 +20,8 @@ public interface ScriptApi {
 
 
     String stripAnsi(String text);
+
+    void setTimeout(long timeout);
+
+    String getMatchedLine();
 }
