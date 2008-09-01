@@ -92,12 +92,18 @@ public class ScriptLexer {
                 parse(backBuffer);
             }
             if (lastMatch == null) {
-                wait(timeout);
+                if (timeout > 0) {
+                    wait(timeout);
+                } else {
+                    wait();
+                }
             }
         } catch (InterruptedException ex) {
             System.out.println("Stopping script");
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            waiting = false;
         }
         return lastMatch;
     }

@@ -17,27 +17,28 @@ import java.util.HashMap;
  */
 public class JavascriptScript implements Script {
     private final URL script;
-    private final Map<String, Object> variables;
 
-    public JavascriptScript(URL script, Map<String,Object> variables) {
+    public JavascriptScript(URL script) {
         this.script = script;
-        this.variables = variables;
     }
 
-    public void run() {
+    public void run(Map<String,Object> variables) {
         ScriptEngineManager mgr = new ScriptEngineManager();
         ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
 
         for (Map.Entry<String,Object> entry : variables.entrySet()) {
             jsEngine.put(entry.getKey(), entry.getValue());
         }
+        System.out.println(this+" started");
         readScriptIntoEngine(jsEngine, getClass().getClassLoader().getResource("org/twdata/twxbbs/proxy/script/global.js"));
         readScriptIntoEngine(jsEngine, script);
+        System.out.println(this+" finished");
         variables.clear();
     }
 
     private void readScriptIntoEngine(ScriptEngine jsEngine, URL script) {
         Reader scriptReader = null;
+
         try {
             scriptReader = new InputStreamReader(script.openStream());
             jsEngine.put(ScriptEngine.NAME, script.toString());
@@ -56,6 +57,10 @@ public class JavascriptScript implements Script {
                 }
             }
         }
+    }
+
+    public String toString() {
+        return "Script ["+script.toString()+"]";
     }
 
 }

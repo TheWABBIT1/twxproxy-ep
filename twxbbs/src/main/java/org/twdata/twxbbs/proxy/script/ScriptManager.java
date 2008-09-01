@@ -3,6 +3,7 @@ package org.twdata.twxbbs.proxy.script;
 import org.twdata.twxbbs.StartableManager;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,5 +17,7 @@ public interface ScriptManager extends StartableManager {
 
     void start();
 
-    List<Thread> startScripts(ScriptType type, ScriptVariablesFactory varFactory);
+    List<Thread> startScripts(String path, ScriptVariablesFactory varFactory);
+
+    Thread startScript(Script script, Map<String,Object> vars);
 }

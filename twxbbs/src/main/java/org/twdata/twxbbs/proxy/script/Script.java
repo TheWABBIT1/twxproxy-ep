@@ -2,6 +2,7 @@ package org.twdata.twxbbs.proxy.script;
 
 import javax.script.ScriptException;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,7 +11,7 @@ import java.io.IOException;
  * Time: 10:53:37 PM
  * To change this template use File | Settings | File Templates.
  */
-public interface Script extends Runnable {
+public interface Script {
 
-    void run();
+    void run(Map<String,Object> args);
 }

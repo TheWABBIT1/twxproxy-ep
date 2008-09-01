@@ -75,6 +75,10 @@ public class ScriptApiImpl implements ScriptApi {
         lexer.removeTextTrigger(id);
     }
 
+    public void setTimeout(long timeout) {
+        lexer.setTimeout(timeout);
+    }
+
     public String stripAnsi(String text) {
         return stripAnsi(text.getBytes(), text.length());
     }
