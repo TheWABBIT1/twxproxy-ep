@@ -31,6 +31,7 @@ public class JavascriptScript implements Script {
         }
         System.out.println(this+" started");
         readScriptIntoEngine(jsEngine, getClass().getClassLoader().getResource("org/twdata/twxbbs/proxy/script/global.js"));
+        readScriptIntoEngine(jsEngine, getClass().getClassLoader().getResource("org/twdata/twxbbs/proxy/script/json2.js"));
         readScriptIntoEngine(jsEngine, script);
         System.out.println(this+" finished");
         variables.clear();

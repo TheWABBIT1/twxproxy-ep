@@ -3,6 +3,7 @@ package org.twdata.twxbbs.proxy.script;
 import junit.framework.TestCase;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -17,7 +18,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 public class ScriptLexerTest extends TestCase {
 
     public void testSimple() throws IOException, InterruptedException {
-        ScriptLexer lexer = new ScriptLexer();
+        ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addTextTrigger("foo", "bob");
         lexer.parse(ByteBuffer.wrap("This guy bob is great".getBytes()));
         ScriptLexer.Match match = lexer.waitForTriggers();
@@ -27,7 +28,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testSimpleLine() throws IOException, InterruptedException {
-        ScriptLexer lexer = new ScriptLexer();
+        ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addTextLineTrigger("foo", "bob");
         lexer.parse(ByteBuffer.wrap("This guy bob is great\r\n".getBytes()));
         ScriptLexer.Match match = lexer.waitForTriggers();
@@ -37,7 +38,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testSimpleMultiThread() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addTextTrigger("foo", "bob");
         lexer.setTimeout(2000);
         Thread t = new Thread(new Runnable() {
@@ -64,7 +65,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTrigger() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextTrigger("foo", "bob");
         lexer.setTimeout(5000);
         Thread t = new Thread(new Runnable() {
@@ -88,7 +89,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerTwice() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextTrigger("foo", "bob");
         lexer.setTimeout(5000);
         sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "This guy  is great\r\n");
@@ -122,7 +123,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerThatMatchesAnything() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextTrigger("foo", "");
         lexer.setTimeout(5000);
         sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "his guy bob is great\r\n");
@@ -133,7 +134,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerThatMatchesAnythingTwice() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextTrigger("foo", "");
         lexer.setTimeout(5000);
         sendTextOnOtherThread(lexer, "This guy bob is great\r\n", "his guy bob is great\r\n");
@@ -150,7 +151,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerThatMatchesAnythingButNotBackBuffer() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.parse(ByteBuffer.wrap("some precursor text".getBytes()));
         lexer.addCapturingTextTrigger("foo", "");
         lexer.setTimeout(5000);
@@ -175,7 +176,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerForLine() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextLineTrigger("foo", "bob");
         lexer.setTimeout(5000);
         Thread t = new Thread(new Runnable() {
@@ -199,7 +200,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerForLineThatMatchesAnything() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextLineTrigger("foo", "");
         lexer.setTimeout(5000);
         Thread t = new Thread(new Runnable() {
@@ -223,7 +224,7 @@ public class ScriptLexerTest extends TestCase {
     }
 
     public void testCapturingTriggerSpreadOverMultipleCalls() throws IOException, InterruptedException {
-        final ScriptLexer lexer = new ScriptLexer();
+        final ScriptLexer lexer = new ScriptLexer(new LexerContext());
         lexer.addCapturingTextLineTrigger("foo", "bob");
         lexer.setTimeout(5000);
         Thread t = new Thread(new Runnable() {

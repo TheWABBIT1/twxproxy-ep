@@ -1,6 +1,5 @@
+var triggerCallbacks = {};
 function Api(lexer) {
-
-    var triggerCallbacks = {};
 
     this.send = function(txt) {
         lexer.send(txt);
@@ -8,12 +7,6 @@ function Api(lexer) {
     this.getCurrentLine = function() {
         lexer.getCurrentLine();
     };
-    this.pause = function() {
-        var id = lexer.pause();
-        if (id != null) {
-            triggerCallbacks[id](lexer.stripAnsi(lexer.getMatchedLine()));
-        }
-    }
     this.killTextTrigger = function(id) {
         lexer.killTextTrigger(id);
     }
@@ -37,6 +30,13 @@ function Api(lexer) {
 
 var game = new Api(gameApi);
 var player = new Api(playerApi);
+
+function pause() {
+    var id = gameApi.pause();
+    if (id != null) {
+        triggerCallbacks[id](stripAnsi(gameApi.getMatchedLine()));
+    }
+}
 
 function stripAnsi(txt) {
     return new String(gameApi.stripAnsi(txt));

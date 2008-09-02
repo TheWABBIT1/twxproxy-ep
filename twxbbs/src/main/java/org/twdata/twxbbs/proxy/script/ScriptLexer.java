@@ -4,8 +4,8 @@ import org.apache.mina.common.ByteBuffer;
 import org.twdata.twxbbs.util.CircularFifoBuffer;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
  * To change this template use File | Settings | File Templates.
  */
 public class ScriptLexer {
-    private final Map<String,Trigger> activeTriggers;
+    private final Set<Trigger> activeTriggers;
 
     // The current line
     private final StringBuffer currentLine;
@@ -30,130 +30,131 @@ public class ScriptLexer {
     // Buffer for read data that may be used to create a modified write buffer if a capturing trigger is used
     private final ByteBuffer readCopyBuffer;
 
-    // Whether we are waiting for triggers to be matched or not
-    private boolean waiting;
-
-    // The last match a trigger matched
-    private Match lastMatch;
-
     // The timeout for waiting for a match
-    private long timeout = 1000 * 60;
+    private long timeout = 0;
 
-    public ScriptLexer() {
-        activeTriggers = new LinkedHashMap<String,Trigger>();
+    // Whether we are waiting for triggers to be matched or not, also used as the synchronization object
+    private final LexerContext lexerContext;
+
+    public ScriptLexer(LexerContext lexerContext) {
+        activeTriggers = new CopyOnWriteArraySet<Trigger>();
         currentLine = new StringBuffer();
         backBuffer = new CircularFifoBuffer(1024);
         captureBuffer = new StringBuffer();
         readCopyBuffer = ByteBuffer.allocate(1024);
         readCopyBuffer.setAutoExpand(true);
-
+        this.lexerContext = lexerContext;
     }
 
-    public synchronized void addTextTrigger(String id, String text) {
-        if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
-        activeTriggers.put(id, new DefaultTrigger(id, text, false));
+    public void addTextTrigger(String id, String text) {
+        if (lexerContext.isWaiting()) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+        activeTriggers.add(new DefaultTrigger(id, text, false));
     }
 
-    public synchronized void addTextLineTrigger(String id, String text) {
-        if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
-        activeTriggers.put(id, new DefaultTrigger(id, text, true));
+    public void addTextLineTrigger(String id, String text) {
+        if (lexerContext.isWaiting()) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+        activeTriggers.add(new DefaultTrigger(id, text, true));
     }
 
-    public synchronized void addCapturingTextTrigger(String id, String text) {
-        if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+    public void addCapturingTextTrigger(String id, String text) {
+        if (lexerContext.isWaiting()) throw new IllegalStateException("Cannot accept new triggers while lexing text");
         if (text == null || text.length() == 0) {
             backBuffer.clear();
         }
-        activeTriggers.put(id, new CapturingTrigger(id, text, false));
+        activeTriggers.add(new CapturingTrigger(id, text, false));
     }
 
-    public synchronized void addCapturingTextLineTrigger(String id, String text) {
-        if (waiting) throw new IllegalStateException("Cannot accept new triggers while lexing text");
+    public void addCapturingTextLineTrigger(String id, String text) {
+        if (lexerContext.isWaiting()) throw new IllegalStateException("Cannot accept new triggers while lexing text");
         if (text == null || text.length() == 0) {
             backBuffer.clear();
         }
-        activeTriggers.put(id, new CapturingTrigger(id, text, true));
+        activeTriggers.add(new CapturingTrigger(id, text, true));
     }
 
-    public synchronized void removeTextTrigger(String id) {
-        if (waiting) throw new IllegalStateException("Cannot remove triggers while lexing text");
-        activeTriggers.remove(id);
+    public void removeTextTrigger(String id) {
+        if (lexerContext.isWaiting()) throw new IllegalStateException("Cannot remove triggers while lexing text");
+        activeTriggers.remove(new DefaultTrigger(id, "", false));
     }
 
     public String getCurrentLine() {
         return currentLine.toString();
     }
 
-    public synchronized Match waitForTriggers() throws IOException, InterruptedException {
-        try {
-            waiting = true;
-            lastMatch = null;
-            if (backBuffer.hasRemaining()) {
-                parse(backBuffer);
-            }
-            if (lastMatch == null) {
-                if (timeout > 0) {
-                    wait(timeout);
-                } else {
-                    wait();
+    public Match waitForTriggers() throws IOException, InterruptedException {
+        synchronized (lexerContext) {
+            try {
+                lexerContext.setWaiting(true);
+                lexerContext.setLastMatch(null);
+                if (backBuffer.hasRemaining()) {
+                    parse(backBuffer);
                 }
+                if (lexerContext.getLastMatch() == null) {
+                    if (timeout > 0) {
+                        lexerContext.wait(timeout);
+                    } else {
+                        lexerContext.wait();
+                    }
+                }
+            } catch (InterruptedException ex) {
+                System.out.println("Stopping script");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            } finally {
+                lexerContext.setWaiting(false);
             }
-        } catch (InterruptedException ex) {
-            System.out.println("Stopping script");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        } finally {
-            waiting = false;
+            return lexerContext.getLastMatch();
         }
-        return lastMatch;
     }
 
-    public synchronized ByteBuffer parse(ByteBuffer buffer) throws IOException {
-        readCopyBuffer.clear();
+    public ByteBuffer parse(ByteBuffer buffer) throws IOException {
+        synchronized (lexerContext) {
+            readCopyBuffer.clear();
 
-        int bytesRead = 0;
-        while (buffer.hasRemaining()) {
-            if (!waiting && buffer == backBuffer) {
-                return buffer;
-            }
-            byte b = buffer.get();
-            bytesRead++;
-
-            if (!waiting) {
-                backBuffer.put(b);
-                readCopyBuffer.put(b);
-                captureBuffer.setLength(0);
-            } else {
-                char c = (char) b;
-                boolean capturing = false;
-                putInCurrentLine(c);
-                for (Trigger trigger : activeTriggers.values()) {
-
-                    if (trigger instanceof CapturingTrigger && trigger.potentialMatch(c)) {
-                        capturing = true;
-                    }
+            int bytesRead = 0;
+            while (buffer.hasRemaining()) {
+                if (!lexerContext.isWaiting() && buffer == backBuffer) {
+                    return buffer;
                 }
+                byte b = buffer.get();
+                bytesRead++;
 
-                if (capturing) {
-                    captureBuffer.append(c);
-                } else {
-                    for (int x=0; x<captureBuffer.length(); x++) {
-                        readCopyBuffer.putChar(captureBuffer.charAt(x));
-                    }
-                    captureBuffer.setLength(0);
+                if (!lexerContext.isWaiting()) {
+                    backBuffer.put(b);
                     readCopyBuffer.put(b);
+                    captureBuffer.setLength(0);
+                } else {
+                    char c = (char) b;
+                    boolean capturing = false;
+                    putInCurrentLine(c);
+                    for (Trigger trigger : activeTriggers) {
 
-                }
+                        if (trigger instanceof CapturingTrigger && trigger.potentialMatch(c)) {
+                            capturing = true;
+                        }
+                    }
 
-                for (Trigger trigger : activeTriggers.values()) {
-                    if (trigger.match(c)) {
-                        handleMatch(trigger);
+                    if (capturing) {
+                        captureBuffer.append(c);
+                    } else {
+                        for (int x=0; x<captureBuffer.length(); x++) {
+                            readCopyBuffer.putChar(captureBuffer.charAt(x));
+                        }
+                        captureBuffer.setLength(0);
+                        readCopyBuffer.put(b);
+
+                    }
+
+                    for (Trigger trigger : activeTriggers) {
+                        if (trigger.match(c)) {
+                            handleMatch(trigger);
+                        }
                     }
                 }
             }
-        }
 
-        return createResultingBuffer(buffer, bytesRead);
+            return createResultingBuffer(buffer, bytesRead);
+        }
     }
 
     private ByteBuffer createResultingBuffer(ByteBuffer buffer, int bytesRead) {
@@ -199,11 +200,11 @@ public class ScriptLexer {
         }
         Match match = new Match(trigger.getId(), matchedText);
         if (trigger.shouldBeRemovedAfterMatch()) {
-            activeTriggers.remove(trigger.getId());
+            activeTriggers.remove(trigger);
         }
-        waiting = false;
-        lastMatch = match;
-        notifyAll();
+        lexerContext.setWaiting(false);
+        lexerContext.setLastMatch(match);
+        lexerContext.notifyAll();
     }
 
     public void setTimeout(long timeout) {
@@ -288,6 +289,19 @@ public class ScriptLexer {
 
         public boolean shouldBeRemovedAfterMatch() {
             return false;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DefaultTrigger)) return false;
+
+            DefaultTrigger that = (DefaultTrigger) o;
+
+            return id.equals(that.id);
+        }
+
+        public int hashCode() {
+            return id.hashCode();
         }
     }
 

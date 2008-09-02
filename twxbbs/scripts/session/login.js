@@ -9,7 +9,7 @@ function menu(prompt) {
 
 function gamePause(prompt) {
     game.send(" ");
-    game.pause();
+    pause();
 }
 function twMenu(prompt) {
     game.send("T*");
@@ -25,14 +25,14 @@ function passwd(prompt) {
 
 game.setTextTrigger("pause", "[Pause]", gamePause);
 game.setTextTrigger("login","ENTER", login);
-game.pause();
+pause();
 game.setTextTrigger("menu", "menu):", menu);
-game.pause();
+pause();
 game.setTextTrigger("twmenu", "Enter your choice:", twMenu);
-game.pause();
+pause();
 game.setTextTrigger("todaysLog", "Show today's log?", todaysLog);
-game.pause();
+pause();
 game.setTextTrigger("passwd", "Password?", passwd);
-game.pause();
+pause();
 game.setTextTrigger("Command", "Command [", function(txt){});
-game.pause();
+pause();

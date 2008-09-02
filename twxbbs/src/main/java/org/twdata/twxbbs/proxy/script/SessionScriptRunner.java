@@ -6,6 +6,7 @@ import org.apache.mina.common.ByteBuffer;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,13 +45,14 @@ public class SessionScriptRunner {
                 super.clear();
             }
         };
-        ScriptLexer gameLexer = new ScriptLexer();
+        LexerContext lexerContext = new LexerContext();
+        ScriptLexer gameLexer = new ScriptLexer(lexerContext);
         ScriptApi gameApi = new ScriptApiImpl(gameLexer, new ScriptApiImpl.TextSender() {
             public void send(String text) throws Exception {
                 nextFilter.messageReceived(ioSession, ByteBuffer.wrap(text.getBytes()));
             }
         });
-        ScriptLexer playerLexer = new ScriptLexer();
+        ScriptLexer playerLexer = new ScriptLexer(lexerContext);
         ScriptApi playerApi = new ScriptApiImpl(playerLexer, new ScriptApiImpl.TextSender() {
             public void send(String text) throws Exception {
                 nextFilter.filterWrite(ioSession, new IoFilter.WriteRequest(ByteBuffer.wrap(text.getBytes())));
