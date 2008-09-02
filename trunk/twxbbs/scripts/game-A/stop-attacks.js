@@ -2,7 +2,7 @@ var attackPtn = / (.*)'s (.*) \(([0-9]+)-([0-9]+)\).*/;
 
 function maybeAttack(prompt) {
     game.setTextTrigger("maybeAttack", "[N]?", attack);
-    game.pause();
+    pause();
     game.killTextTrigger("maybeAttack");
 }
 function attack(prompt) {
@@ -12,13 +12,33 @@ function attack(prompt) {
         player.send("*\u001b[31m\u001b[1mLet's just be friends\u001b[22m*");
         game.setCapturingTextLineTrigger("no", "No", function(txt){});
         game.send("n");
-        game.pause();
+
+        // Gets the game database and updates the attackAttempts stats
+        var db = session.get("db");
+        var stats = db.getTable("stats");
+        var attackAttemptsList = stats.get("attackAttempts");
+        attackAttemptsList = (attackAttemptsList == null ? new Array() : attackAttemptsList);
+        attackAttemptsList.push({
+            "targetTrader" : match[1],
+            "targetShip" : match[2],
+            "targetFigs" : match[4],
+            "attackerFigs" : match[3]
+        });
+        stats.put("attackAttempts", attackAttemptsList);
+
+        // debugging
+        println("Attack attempts:");
+        for (x in attackAttemptsList) {
+            println("\tAttacked: "+attackAttemptsList[x].targetTrader);
+        }
+
+        pause();
     } else {
         println("Can't match :"+prompt+":");
     }
 
-    game.pause();
+    pause();
 }
 
 game.setTextTrigger("attack", "Attack", maybeAttack);
-game.pause();
+pause();

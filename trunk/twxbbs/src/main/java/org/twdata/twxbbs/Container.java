@@ -11,6 +11,8 @@ import org.twdata.twxbbs.config.impl.IniConfiguration;
 import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.event.EventManager;
 import org.twdata.twxbbs.event.impl.DefaultEventManager;
+import org.twdata.twxbbs.db.DatabaseManager;
+import org.twdata.twxbbs.db.jdbm.JdbmDatabaseManager;
 import org.ini4j.Ini;
 
 import javax.servlet.Servlet;
@@ -38,13 +40,17 @@ public class Container {
                 get(EventManager.class)
         ));
 
+        objects.put(DatabaseManager.class, new JdbmDatabaseManager(
+                get(EventManager.class)
+        ));
         objects.put(GameAccessor.class, new StubGameAccessor());
         objects.put(ProxyConnector.class, new ProxyConnector());
         objects.put(TemplateGenerator.class, new TemplateGenerator(
                 get(EventManager.class)
         ));
         objects.put(DefaultScriptManager.class, new DefaultScriptManager(
-                get(EventManager.class)
+                get(EventManager.class),
+                get(DatabaseManager.class)
         ));
         objects.put(ProxyManager.class, new DefaultProxyManager(
                 get(EventManager.class),

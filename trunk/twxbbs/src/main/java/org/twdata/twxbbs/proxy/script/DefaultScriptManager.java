@@ -5,6 +5,7 @@ import org.twdata.twxbbs.config.Configuration;
 import org.twdata.twxbbs.event.EventListener;
 import org.twdata.twxbbs.event.EventManager;
 import org.twdata.twxbbs.Container;
+import org.twdata.twxbbs.db.DatabaseManager;
 
 import java.io.IOException;
 import java.io.File;
@@ -24,10 +25,13 @@ public class DefaultScriptManager implements ScriptManager {
     private File scriptsDir;
     private Configuration configuration;
     private final Map<String,Object> applicationContext;
+    private DatabaseManager databaseManager;
 
-    public DefaultScriptManager(EventManager eventManager) {
+    public DefaultScriptManager(EventManager eventManager, DatabaseManager databaseManager) {
         applicationContext = Collections.synchronizedMap(new HashMap<String,Object>());
+        this.databaseManager = databaseManager;
         eventManager.register(this);
+
     }
 
     @EventListener
@@ -98,6 +102,7 @@ public class DefaultScriptManager implements ScriptManager {
     public Thread startScript(final Script script, final Map<String,Object> vars) {
 
         vars.put("application", applicationContext);
+        vars.put("dbManager", databaseManager);
         Thread t = new Thread(new Runnable() {
             public void run() {
                 script.run(vars);
